@@ -22,7 +22,7 @@ util.load_test <- function(file_name = "traffic_test.txt"){
         at = at + TRAINDATA_SLOTSIZE
         if(at > dim(test.raw)[1]) break
     }
-    return(list(raw = test.raw, samples = test.samples, link_count = dim(test$samples[[1]]$x)[2], minutes_sample = dim(test$samples[[1]]$x)[1], sample_count = length(test$samples), isTrain = F))
+    return(list(raw = test.raw, samples = test.samples, link_count = dim(test.samples[[1]]$x)[2], minutes_sample = dim(test.samples[[1]]$x)[1], sample_count = length(test.samples), isTrain = F))
 }
 
 util.load_train <- function(file_name = "traffic_training.txt"){
@@ -61,5 +61,8 @@ util.evaluate.file <- function(test_file = "solutions/traffic_example.txt", targ
     library("hydroGOF") ## rmse implementation ##
     target = read.csv(file = test_file,head=F,sep=" ")
     sol = read.csv(file = target_file,head=F,sep=" ")
+    print(dim(target))
     return(rmse(as.vector(as.matrix(target)),as.vector(as.matrix(sol))))
 }
+
+
