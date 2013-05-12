@@ -26,23 +26,36 @@ namespace TrafficFlow
         {
             TerrainGraph G = new TerrainGraph();
             Visualization D = new Visualization();
-            G.addVertex(444, 114 - 22);
-            G.addEdge(0, G.addVertex(384, 250 - 22), "Aleja Trzech Wieszczów");
-            G.addEdge(1, G.addVertex(359, 342 - 22), "Aleja Trzech Wieszczów");
-            G.addEdge(2, G.addVertex(48, 214 - 22), "Czarnowiejska");
-            drawCurve(Color.FromArgb(90, 50, 50, 50), G.streetCurve("Aleja Trzech Wieszczów"));
-            drawCurve(Color.FromArgb(170, 178, 34, 34), G.streetCurve("Czarnowiejska"));
+            G.buildSampleGraph();
+            
+            drawCurve(G.getStreet("al. Jana Pawła II"));
+            drawCurve(G.getStreet("al. Solidarności"));
+            //drawVertices(G.getVertices());
         }
 
-        public static void drawCurve(Color color, List<Tuple<int, int>> coor)
+        public static void drawVertices(List<Tuple<int, int>> coor)
         {
-            Brush brush = new SolidBrush(color);
-            Pen pen = new Pen(color, 5);
+            Pen pen = new Pen(Color.FromArgb(180, 0, 0, 0), 4);
+            Graphics graphics = form.picture.CreateGraphics();
+            graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            for (int i = 1; i < coor.Count; ++i)
+                graphics.DrawEllipse(pen, coor[i].Item1 - 2, coor[i].Item2 - 2, 4, 4);
+
+            pen.Dispose();
+            graphics.Dispose();
+        }
+
+        public static void drawCurve(List<Tuple<int, int, Color>> coor)
+        {
             Graphics graphics = form.picture.CreateGraphics();
             graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             for (int i = 1; i < coor.Count; ++i)
+            {
+                Pen pen = new Pen(coor[i].Item3, 5);
                 graphics.DrawLine(pen, coor[i - 1].Item1, coor[i - 1].Item2, coor[i].Item1, coor[i].Item2);
-            pen.Dispose();
+                pen.Dispose();
+            }
             graphics.Dispose();
         }
     }

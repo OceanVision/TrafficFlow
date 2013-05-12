@@ -31,6 +31,7 @@
             this.picture = new System.Windows.Forms.PictureBox();
             this.loadBMP = new System.Windows.Forms.Button();
             this.CursorPos = new System.Windows.Forms.Label();
+            this.textBox1 = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.picture)).BeginInit();
             this.SuspendLayout();
             // 
@@ -46,7 +47,7 @@
             this.picture.TabIndex = 1;
             this.picture.TabStop = false;
             this.picture.Click += new System.EventHandler(this.picture_Click);
-            this.picture.Paint += new System.Windows.Forms.PaintEventHandler(this.picture_Paint);
+            //this.picture.Paint += new System.Windows.Forms.PaintEventHandler(this.picture_Paint);
             this.picture.MouseMove += new System.Windows.Forms.MouseEventHandler(this.picture_MouseMove);
             // 
             // loadBMP
@@ -70,12 +71,22 @@
             this.CursorPos.TabIndex = 3;
             this.CursorPos.Text = "label1";
             // 
+            // textBox1
+            // 
+            this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.textBox1.Location = new System.Drawing.Point(12, 338);
+            this.textBox1.Multiline = true;
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(100, 20);
+            this.textBox1.TabIndex = 4;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Window;
             this.ClientSize = new System.Drawing.Size(560, 372);
+            this.Controls.Add(this.textBox1);
             this.Controls.Add(this.CursorPos);
             this.Controls.Add(this.loadBMP);
             this.Controls.Add(this.picture);
@@ -93,6 +104,7 @@
         public System.Windows.Forms.PictureBox picture;
         public System.Windows.Forms.Button loadBMP;
         public System.Windows.Forms.Label CursorPos;
+        private System.Windows.Forms.TextBox textBox1;
     }
 }
 

@@ -24,18 +24,14 @@ namespace TrafficFlow
 
         private void loadBMP_Click(object sender, EventArgs e)
         {
-            Bitmap bmp = new Bitmap(@".\Map.bmp");
+            Bitmap bmp = new Bitmap(@".\Warsaw.bmp");
             picture.Image = bmp;
-        }
-
-        private void picture_Paint(object sender, PaintEventArgs e)
-        {
-             //e.Graphics.DrawLine(new Pen(Color.Blue, 4), 0, 0, 200, 200);
         }
 
         private void picture_Click(object sender, EventArgs e)
         {
             Program.testDraw();
+            textBox1.Text += Cursor.Position.X + ", " + Cursor.Position.Y + " - 22\n";
         }
     }
 }

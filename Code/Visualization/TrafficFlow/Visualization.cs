@@ -10,6 +10,9 @@ namespace TrafficFlow
     {
         public Visualization() { }
 
-
+        public void drawTrafficJam()
+        {
+            
+        }
     }
 }
