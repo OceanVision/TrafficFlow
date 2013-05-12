@@ -25,7 +25,9 @@ util.load_test <- function(file_name = "traffic_test.txt"){
     return(list(raw = test.raw, samples = test.samples, link_count = dim(test.samples[[1]]$x)[2], minutes_sample = dim(test.samples[[1]]$x)[1], sample_count = length(test.samples), isTrain = F))
 }
 
-util.load_train <- function(file_name = "traffic_training.txt"){
+
+util.load_train <- function(file_name = "traffic_training.txt", increment = -1){
+    if(increment == -1) increment = TRAINDATA_INCREMENT
     ### Read raw data ### 
     train.raw = read.csv(file=file_name,head=F,sep=" ")
     train.cycles = list()
@@ -41,7 +43,7 @@ util.load_train <- function(file_name = "traffic_training.txt"){
     while(1){
         sample_count = sample_count + 1
         train.samples[[sample_count]] = list(x = train.raw[at:(at+TRAINDATA_SLOTSIZE-1),], y = train.raw[(at+TRAINDATA_SLOTSIZE):(at+TRAINDATA_SLOTSIZE+TRAINDATA_PREDICTSIZE-1),])
-        at = at + TRAINDATA_INCREMENT
+        at = at + increment  
         if(at > dim(train.raw)[1]) break
     }
     return(list(raw = train.raw, cycles = train.cycles, samples = train.samples))
