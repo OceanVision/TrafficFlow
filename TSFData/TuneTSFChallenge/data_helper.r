@@ -5,7 +5,25 @@ TRAINDATA_COUNT = 100 # no of simulation cycles
 TRAINDATA_SLOTSIZE = 30 # no of minute to take into account. NOTICE TRAINDATA CYCLE HAS TO BE 0 MOD TRAINDATA_SLOTSIZE
 TRAINDATA_PREDICTSIZE = 10#  no of minutes to predict
 TRAINDATA_INCREMENT = 30 # overlapping controlling
+TRAINDATA_LINK_COUNT = 20 # number of observed links
 ### End of constant section ###
+
+
+util.load_test <- function(file_name = "traffic_test.txt"){
+    ### Read raw data ### 
+    test.raw = as.matrix(read.csv(file=file_name,head=F,sep=" ",colClasses = rep("numeric",TRAINDATA_LINK_COUNT)))
+    
+    ### Prepare sample list basing on constants ###
+    test.samples = list()
+    at = 1; sample_count = 0
+    while(1){
+        sample_count = sample_count + 1
+        test.samples[[sample_count]] = list(x = test.raw[at:(at+TRAINDATA_SLOTSIZE-1),])
+        at = at + TRAINDATA_SLOTSIZE
+        if(at > dim(test.raw)[1]) break
+    }
+    return(list(raw = test.raw, samples = test.samples, link_count = dim(test$samples[[1]]$x)[2], minutes_sample = dim(test$samples[[1]]$x)[1], sample_count = length(test$samples), isTrain = F))
+}
 
 util.load_train <- function(file_name = "traffic_training.txt"){
     ### Read raw data ### 
