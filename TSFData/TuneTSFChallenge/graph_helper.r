@@ -1,5 +1,4 @@
 #create_igraph <- fun
-rm(list = ls())
 
 
 create_igraph<- function(file_nodes = "data/street_graph_nodes.csv", file_edges = "data/street_graph_edges.csv"){
@@ -46,40 +45,97 @@ create_igraph<- function(file_nodes = "data/street_graph_nodes.csv", file_edges 
     
     return(g)
 } 
-#g = create_igraph()
-#write.graph(g, file = "warsaw_graph.gml", format = "gml")
 
+get_subgraph <- function(g, file = "data/streets.txt"){
+    m = read.csv(file = "data/streets.txt", head = T, sep= "")
 
-m = read.csv(file = "data/streets.txt", head = T, sep= "")
-
-
-
-
-g = read.graph(file = "warsaw_graph.gml", format = "gml")
-### Create subgraph of nodes measured with ILD ###
-subgraph = graph.empty()  
-for(i in 1:dim(m)[1]){ ## all edges
-
-    
-    if(!(as.numeric(m[i,"HeadOpenID"]) %in% V(subgraph)$open_id)){
-        subgraph = add.vertices(subgraph, 1)
-        V(subgraph)[vcount(subgraph)]$openid = as.numeric(m[i,"HeadOpenID"])
-        graphid = which(V(g)$openid == as.numeric(m[i,"HeadOpenID"]))
-
-        V(subgraph)[vcount(subgraph)]$graphid = graphid     
-        V(subgraph)[vcount(subgraph)]$longitude = V(g)[graphid]$longitude
-        V(subgraph)[vcount(subgraph)]$latitude =  V(g)[graphid]$latitude
-
+    ### create subgraph of nodes measured with ild ###
+    subgraph = graph.empty()  
+    #add vertices
+    for(i in 1:dim(m)[1]){ ## all edges
 
         
-        print(V(subgraph)$graphid)
-        print(which(V(g)$openid == as.numeric(m[i,"HeadOpenID"])))
+        if(!(as.numeric(m[i,"HeadOpenID"]) %in% V(subgraph)$openid)){
+            subgraph = add.vertices(subgraph, 1)
+            V(subgraph)[vcount(subgraph)]$openid = as.numeric(m[i,"HeadOpenID"])
+            graphid = which(V(g)$openid == as.numeric(m[i,"HeadOpenID"]))
+
+            V(subgraph)[vcount(subgraph)]$graphid = graphid     
+            V(subgraph)[vcount(subgraph)]$longitude = V(g)[graphid]$longitude
+            V(subgraph)[vcount(subgraph)]$latitude =  V(g)[graphid]$latitude
+        }
+        
+        if(!(as.numeric(m[i,"TailOpenID"]) %in% V(subgraph)$openid)){
+            subgraph = add.vertices(subgraph, 1)
+            V(subgraph)[vcount(subgraph)]$openid = as.numeric(m[i, "TailOpenID"])
+            graphid = which(V(g)$openid == as.numeric(m[i,"TailOpenID"]))
+
+            V(subgraph)[vcount(subgraph)]$graphid = graphid     
+            V(subgraph)[vcount(subgraph)]$longitude = V(g)[graphid]$longitude
+            V(subgraph)[vcount(subgraph)]$latitude =  V(g)[graphid]$latitude
+        }
+    
     }
+    #add edges
+    edges = c()
+    dataid = c()
+    for(i in 1:dim(m)[1]){ ## all edges
+        head_id = which(V(subgraph)$openid == as.numeric(m[i,"HeadOpenID"]))
+        tail_id = which(V(subgraph)$openid == as.numeric(m[i,"TailOpenID"]))
+        edges = cbind(edges, head_id, tail_id)
+        dataid = c(dataid, i)
+    }
+
+    subgraph = add.edges(subgraph, edges)
+    E(subgraph)$dataid = dataid
+    return(subgraph)
+}
+
+plot_graph_with_gps_data <- function(g){
+    ### Plot subgraph (visualisation) ###
+    L = cbind(V(g)$longitude, V(g)$latitude)
+    #png("tmp.png",width=640,height=640) # save to file
+    plot.igraph(g, vertex.size =2, vertex.label=NA, layout=L)
+    #dev.off()
 }
 
 
-### Plot subgraph (visualisation) ###
-L = cbind(V(subgraph)$longitude, V(subgraph)$latitude)
-plot.igraph(subgraph, vertex.size =2, vertex.label=NA, layout=L)
+# usecase1 of basic functionality #
+usecase1 <- function(){
+    g = create_igraph()
+    write.graph(g, file = "warsaw_graph.gml", format = "gml")
+
+    print(summary(g))
+
+    subgraph <- get_subgraph(g)
+
+    plot_graph_with_gps_data(subgraph)
+}
+
+
+g = read.graph(file = "warsaw_graph.gml", format = "gml")
+subgraph <- get_subgraph(g)
+
+
+
+get_distance_corr <- function(subgraph){
+    #miedzy krawedziami
+    correlation = matrix(0, ecount(subgraph), ecount(subgraph))
+    for(i in 1:ecount(subgraph)){
+        for(j in 1:ecount(subgraph)){
+            sourcei = get.edges(subgraph, E(subgraph)[i])[1]
+            sourcej = get.edges(subgraph, E(subgraph)[j])[1]
+            correlation[i,j] =( (V(subgraph)[sourcei]$latitude - V(subgraph)[sourcej]$latitude)**2 + (V(subgraph)[sourcei]$longitude - V(subgraph)[sourcej]$longitude)**2 )*100
+        }
+    }
+    return(correlation)
+}
+
+
+
+
+### get induced subgraph - to potem w model1b wiec narazie nie ma sensu ###
+
+
 
 

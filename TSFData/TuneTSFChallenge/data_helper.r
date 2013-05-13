@@ -25,6 +25,12 @@ util.load_test <- function(file_name = "traffic_test.txt"){
     return(list(raw = test.raw, samples = test.samples, link_count = dim(test.samples[[1]]$x)[2], minutes_sample = dim(test.samples[[1]]$x)[1], sample_count = length(test.samples), isTrain = F))
 }
 
+### wrapper to get only samples ###
+util.load_train_samples <- function(file_name = "traffic_training.txt", increment = -1){
+    train = util.load_train(file_name, increment)   
+ 
+    return(list(samples = train$samples))
+}
 
 util.load_train <- function(file_name = "traffic_training.txt", increment = -1){
     if(increment == -1) increment = TRAINDATA_INCREMENT
@@ -40,12 +46,26 @@ util.load_train <- function(file_name = "traffic_training.txt", increment = -1){
     ### Prepare sample list basing on constants ###
     train.samples = list()
     at = 1; sample_count = 0
+    at_cycle = 1;
     while(1){
+
         sample_count = sample_count + 1
         train.samples[[sample_count]] = list(x = train.raw[at:(at+TRAINDATA_SLOTSIZE-1),], y = train.raw[(at+TRAINDATA_SLOTSIZE):(at+TRAINDATA_SLOTSIZE+TRAINDATA_PREDICTSIZE-1),])
-        at = at + increment  
+        at_cycle = at %% TRAINDATA_CYCLE
+
+        
+        if(at_cycle + TRAINDATA_SLOTSIZE + TRAINDATA_PREDICTSIZE > TRAINDATA_CYCLE){
+            at_cycle = 0
+            at = TRAINDATA_CYCLE*as.integer(at/TRAINDATA_CYCLE) + TRAINDATA_CYCLE + 1
+        } else{
+            at_cycle = at %% TRAINDATA_CYCLE
+            at = at + increment 
+        }
+
         if(at > dim(train.raw)[1]) break
     }
+
+
     return(list(raw = train.raw, cycles = train.cycles, samples = train.samples))
 }
 
