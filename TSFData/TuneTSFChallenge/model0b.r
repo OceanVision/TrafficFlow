@@ -1,3 +1,7 @@
+# Pliki : 
+# 1) dane surowe : traffic_test_samples_inc10.RDa
+# 2) dane pod model0a/model0b : model0b.data
+# 3) graf w gml warsaw_graph.gml
 
 rm(list = ls())
 ### Baseline model - to test predictive power of the data samples ###
@@ -6,10 +10,27 @@ rm(list = ls())
 # TODO: move part of this functionality to the data_helper.r
 # TODO: util.prepareDF, util.prepareDFTest
 
-load("traffic_test.RDa")
+LINK_COUNT = 20
+
+library(igraph)
+
+### Generate samples ###
 source("data_helper.r")
-train = util.load_train(increment = 10)
-write(train, file = "traffic_test_model0b.RDa")
+source("graph_helper.r")
+#library(rjson)
+#train = util.load_train_samples(increment = 10)
+#print(length(train$samples))
+#save(train, file="traffic_test_samples_inc10.RDa")
+
+
+
+
+
+load(file="traffic_test_samples_inc10.RDa")
+print(paste("loaded", length(train$samples), "samples"))
+
+#train$samples = train$samples[1:2000]
+#save(train, file="traffic_test_samples_inc10_subset.RDa")
 
 
 ### Niech to bedzie juz wczesniej ###
@@ -24,11 +45,11 @@ train$isTrain = T
 
 
 ### Data regression 0a model ###
-model0a.getDefaultPredictOptions <- function(){
-    return(list(look_behind = 10, ahead = 10,link_countlink_count= 1))
+model0b.getDefaultPredictOptions <- function(){
+    return(list(look_behind = 10, look_behind_self=30, ahead = 10,link_countlink_count= 1))
 }
 
-model0a.prepareData <- function(train = train, predict_options = list(look_behind = 10,ahead = 10,link_countlink_count= 1)){
+model0b.prepareData <- function(train = train, predict_options = list(look_behind = 10,ahead = 10,link_countlink_count= 1)){
     ### Prepare data for regression ###
         # data_object - object specified by data_helper. r, shared data format
             # amongs models ###
@@ -85,34 +106,37 @@ model0a.prepareData <- function(train = train, predict_options = list(look_behin
 }
 
 
-model0a.saveDataSample <- function(){
-    predict_options = model0a.getDefaultPredictOptions()
+model0b.saveDataSample <- function(){
+    predict_options = model0b.getDefaultPredictOptions()
     predict_options$look_behind = 30
-    model0a.data.3010 = model0a.prepareData(train, predict_options)
-    print(summary(model0a.data.3010))
-    save(model0a.data.3010, file = "model0a.data.3010.RDa")
+    model0b.data = model0b.prepareData(train, predict_options)
+    print(summary(model0b.data))
+    save(model0b.data, file = "model0b.data.RDa")
     print("Done")
 }
 
+
+#model0b.saveDataSample()
 
 
 ### Train list of models (each for each time_step) for one link ###
 ### We understand : one model is a list of models for all the time_steps ###
 ### So called : ahead models ###
-model0a.getModel0a <- function(train_data, subset_x, subset_y, predict_options, weights_regression){
-    model0a.data = train_data[,union(subset_x, subset_y)]
+model0b.getModel0b <- function(train_data, subset_x, subset_y, predict_options, weights_regression= -1){
+    model.data = train_data[,union(subset_x, subset_y)]
 
     print(cat("### Doing model for ", subset_x, "###"))
 
-    model.x_params = ncol(model0a.data) # poprawic jako liste
+    model.x_params = ncol(model.data) # poprawic jako liste
     model.test_size = 1000 # poprawic
 
     print("### Training regression model ###")
-    
+   
+ 
     models = list()
     for(y in 1:length(subset_y)){
         print(paste("Training ",y))
-        m = lm(model0a.data[,subset_y[y]] ~ ., data = model0a.data[,subset_x])
+        m = lm(model.data[,subset_y[y]] ~ ., data = model.data[,subset_x])
         models[[y]] = list(coef = m$coef) #TODO: add information about error
     }
 
@@ -123,23 +147,23 @@ model0a.getModel0a <- function(train_data, subset_x, subset_y, predict_options, 
 
 
 ### Deploy model0 on a given sample ###
-model0a.applyModel0a<-function(model0a, test_data){
+model0b.applyModel0b<-function(model0b, test_data){
     linearPredict <- function(x, weights){
         return( sum(x*weights[2:length(weights)]) + weights[1])
     }
     test_data = as.vector(as.matrix(test_data))
     predicted = rep(0, TRAINDATA_PREDICTSIZE)
     for(i in 1:TRAINDATA_PREDICTSIZE){#train.sample_count){
-        predicted[i] = linearPredict(test_data, model0a$ahead_models[[i]]$coef) #predict
+        predicted[i] = linearPredict(test_data, model0b$ahead_models[[i]]$coef) #predict
     }
     return(sum(predicted)) #value to return - number of cars sumed in 10 minute period .. ups
 }
 
 ### Perform whole (required) prediction ###
-model0a.makePrediction <- function(link_models, x){
-   y = matrix(0, ncol = TRAINDATA_LINK_COUNT, nrow = 1)
-   for(i in 1:TRAINDATA_LINK_COUNT){
-        y[,i] = model0a.applyModel0a(link_models[[i]], as.vector(x[link_models[[i]]$x_params])) 
+model0b.makePrediction <- function(link_models, x){
+   y = matrix(0, ncol = LINK_COUNT, nrow = 1)
+   for(i in 1:LINK_COUNT){
+        y[,i] = model0b.applyModel0b(link_models[[i]], as.vector(x[link_models[[i]]$x_params])) 
    } 
    return(y)
 }
@@ -148,42 +172,65 @@ model0a.makePrediction <- function(link_models, x){
 
 
 
-#link_models = list()
+link_models = list()
 
-#predict_options = model0a.getDefaultPredictOptions()
-#predict_options$look_behind = 30
-#load("model0a.data.3010.RDa")
+predict_options = model0b.getDefaultPredictOptions()
+predict_options$look_behind = 10
 
+load("model0b.data.RDa")
+
+
+
+g = read.graph(file = "warsaw_graph.gml", format = "gml")
+subgraph <- get_subgraph(g)
+corr <- get_distance_corr(subgraph)
+
+
+print(corr[,4])
+print(order(corr[,4]))
+print(summary(subgraph))
 
 
 #TODO: include atleast itself!! lol trorlrorlwrjw
 #Code for learning model0a
-#for(i in 1:TRAINDATA_LINK_COUNT){
-#    subset_y = c(paste("Y",i,"T",1:10,sep=""))
-#    subset_x = c(paste(paste("L",i,sep=""),"T",1:30, sep=""),paste("L18","T",1:30, sep=""), paste("L11","T",1:30, sep="")) # przewidywanie tylko na podstawie ustalonej czesci
-#    link_models[[i]] = model0a.getModel0a(model0a.data.3010[,union(subset_x,subset_y)], subset_x, subset_y, predict_options, c())
-#    print(summary(link_models[[i]]))
-#}
+print(LINK_COUNT)
+weights_regression = c()
+for(i in 1:LINK_COUNT){
+    subset_y = c(paste("Y",i,"T",1:10,sep=""))
+    dist_corr = order(corr[,i])
+    subset_x=c()
+     
+    for(j in 1:10){
+        start_index = 30 - predict_options$look_behind + 1
+        if(j==0) start_index = 30 - predict_options$look_behind_self + 1
+        subset_x = c(subset_x,c(paste(paste("L",dist_corr[j],sep=""),"T",start_index:30, sep="")))
+     }
+    link_models[[i]] = model0b.getModel0b(model0b.data[,union(subset_x,subset_y)], subset_x, subset_y, predict_options, c())
+    print(summary(link_models[[i]]$ahead_models[[1]]))
+}
 
 #save(link_models, file="models0a.link_models.fixed_train.RDa")
 #load(file = "models0a.link_models.fixed_train.RDa")
 #rm(model0a.data.3010)
 
-#test = util.load_test() # isTrain included
-#data_transform = model0a.prepareData(test, predict_options) 
-#y=(model0a.makePrediction(link_models, data_transform[1,]))
+test = util.load_test() # isTrain included
+predict_options$look_behind = 30
+data_transform = model0b.prepareData(test, predict_options) 
+predict_options$look_behind = 10
+y=(model0b.makePrediction(link_models, data_transform[1,]))
 
-#y_collected = y
-#for(i in 2:dim(data_transform)[1]){
-#    if(i%%100==0) print(i)
-#    y_collected = rbind(y_collected, model0a.makePrediction(link_models, data_transform[i,]))
-#}
-#print(summary(y_collected))
+print("done")
+y_collected = y
+for(i in 2:dim(data_transform)[1]){
+    if(i%%100==0) print(i)
+    y_collected = rbind(y_collected, model0b.makePrediction(link_models, data_transform[i,]))
+}
+print(summary(y_collected))
 
-#save(y_collected, file="tmp.RDa")
+save(y_collected, file="tmp.RDa")
 #print(dim(y_collected))
 
-#print(util.evaluate.matrix(y_collected))
+print(util.evaluate.matrix(y_collected))
 
 #test_data = util.load_test()
 #print(summary(test_data))

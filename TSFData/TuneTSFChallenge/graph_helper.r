@@ -1,5 +1,4 @@
 #create_igraph <- fun
-rm(list = ls())
 
 
 create_igraph<- function(file_nodes = "data/street_graph_nodes.csv", file_edges = "data/street_graph_edges.csv"){
