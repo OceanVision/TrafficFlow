@@ -111,5 +111,13 @@ usecase1 <- function(){
     plot_graph_with_gps_data(subgraph)
 }
 
+g = read.graph(file = "warsaw_graph.gml", format = "gml")
+subgraph <- get_subgraph(g)
 
-usecase1()
+correlation = matrix(0, vcount(subgraph), vcount(subgraph))
+
+
+
+
+
+
