@@ -8,6 +8,9 @@ rm(list = ls())
 
 load("traffic_test.RDa")
 source("data_helper.r")
+train = util.load_train(increment = 10)
+write(train, file = "traffic_test_model0b.RDa")
+
 
 ### Niech to bedzie juz wczesniej ###
 train$link_count = dim(train$samples[[1]]$x)[2] 
@@ -15,6 +18,7 @@ train$minutes_sample = dim(train$samples[[1]]$x)[1]
 train$sample_count = length(train$samples)
 train$isTrain = T
 ### 
+
 
 
 
@@ -144,42 +148,42 @@ model0a.makePrediction <- function(link_models, x){
 
 
 
-link_models = list()
+#link_models = list()
 
-predict_options = model0a.getDefaultPredictOptions()
-predict_options$look_behind = 30
-load("model0a.data.3010.RDa")
+#predict_options = model0a.getDefaultPredictOptions()
+#predict_options$look_behind = 30
+#load("model0a.data.3010.RDa")
 
 
 
 #TODO: include atleast itself!! lol trorlrorlwrjw
 #Code for learning model0a
-for(i in 1:TRAINDATA_LINK_COUNT){
-    subset_y = c(paste("Y",i,"T",1:10,sep=""))
-    subset_x = c(paste(paste("L",i,sep=""),"T",1:30, sep=""),paste("L18","T",1:30, sep=""), paste("L11","T",1:30, sep="")) # przewidywanie tylko na podstawie ustalonej czesci
-    link_models[[i]] = model0a.getModel0a(model0a.data.3010[,union(subset_x,subset_y)], subset_x, subset_y, predict_options, c())
-    print(summary(link_models[[i]]))
-}
+#for(i in 1:TRAINDATA_LINK_COUNT){
+#    subset_y = c(paste("Y",i,"T",1:10,sep=""))
+#    subset_x = c(paste(paste("L",i,sep=""),"T",1:30, sep=""),paste("L18","T",1:30, sep=""), paste("L11","T",1:30, sep="")) # przewidywanie tylko na podstawie ustalonej czesci
+#    link_models[[i]] = model0a.getModel0a(model0a.data.3010[,union(subset_x,subset_y)], subset_x, subset_y, predict_options, c())
+#    print(summary(link_models[[i]]))
+#}
 
-save(link_models, file="models0a.link_models.fixed_train.RDa")
-load(file = "models0a.link_models.fixed_train.RDa")
-rm(model0a.data.3010)
+#save(link_models, file="models0a.link_models.fixed_train.RDa")
+#load(file = "models0a.link_models.fixed_train.RDa")
+#rm(model0a.data.3010)
 
-test = util.load_test() # isTrain included
-data_transform = model0a.prepareData(test, predict_options) 
-y=(model0a.makePrediction(link_models, data_transform[1,]))
+#test = util.load_test() # isTrain included
+#data_transform = model0a.prepareData(test, predict_options) 
+#y=(model0a.makePrediction(link_models, data_transform[1,]))
 
-y_collected = y
-for(i in 2:dim(data_transform)[1]){
-    if(i%%100==0) print(i)
-    y_collected = rbind(y_collected, model0a.makePrediction(link_models, data_transform[i,]))
-}
-print(summary(y_collected))
+#y_collected = y
+#for(i in 2:dim(data_transform)[1]){
+#    if(i%%100==0) print(i)
+#    y_collected = rbind(y_collected, model0a.makePrediction(link_models, data_transform[i,]))
+#}
+#print(summary(y_collected))
 
-save(y_collected, file="tmp.RDa")
-print(dim(y_collected))
+#save(y_collected, file="tmp.RDa")
+#print(dim(y_collected))
 
-print(util.evaluate.matrix(y_collected))
+#print(util.evaluate.matrix(y_collected))
 
 #test_data = util.load_test()
 #print(summary(test_data))

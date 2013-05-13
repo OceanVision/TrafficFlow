@@ -79,14 +79,16 @@ get_subgraph <- function(g, file = "data/streets.txt"){
     }
     #add edges
     edges = c()
+    dataid = c()
     for(i in 1:dim(m)[1]){ ## all edges
         head_id = which(V(subgraph)$openid == as.numeric(m[i,"HeadOpenID"]))
         tail_id = which(V(subgraph)$openid == as.numeric(m[i,"TailOpenID"]))
         edges = cbind(edges, head_id, tail_id)
+        dataid = c(dataid, i)
     }
 
     subgraph = add.edges(subgraph, edges)
-
+    E(subgraph)$dataid = dataid
     return(subgraph)
 }
 
@@ -111,12 +113,29 @@ usecase1 <- function(){
     plot_graph_with_gps_data(subgraph)
 }
 
+
 g = read.graph(file = "warsaw_graph.gml", format = "gml")
 subgraph <- get_subgraph(g)
 
-correlation = matrix(0, vcount(subgraph), vcount(subgraph))
 
 
+get_distance_corr <- function(subgraph){
+    #miedzy krawedziami
+    correlation = matrix(0, ecount(subgraph), ecount(subgraph))
+    for(i in 1:ecount(subgraph)){
+        for(j in 1:ecount(subgraph)){
+            sourcei = get.edges(subgraph, E(subgraph)[i])[1]
+            sourcej = get.edges(subgraph, E(subgraph)[j])[1]
+            correlation[i,j] =( (V(subgraph)[sourcei]$latitude - V(subgraph)[sourcej]$latitude)**2 + (V(subgraph)[sourcei]$longitude - V(subgraph)[sourcej]$longitude)**2 )*100
+        }
+    }
+    return(correlation)
+}
+
+
+
+
+### get induced subgraph - to potem w model1b wiec narazie nie ma sensu ###
 
 
 
