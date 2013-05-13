@@ -48,7 +48,7 @@ create_igraph<- function(file_nodes = "data/street_graph_nodes.csv", file_edges 
 } 
 
 get_subgraph <- function(g, file = "data/streets.txt"){
-    m = read.csv(file = "data/streets.txt", head = t, sep= "")
+    m = read.csv(file = "data/streets.txt", head = T, sep= "")
 
     ### create subgraph of nodes measured with ild ###
     subgraph = graph.empty()  
@@ -56,32 +56,32 @@ get_subgraph <- function(g, file = "data/streets.txt"){
     for(i in 1:dim(m)[1]){ ## all edges
 
         
-        if(!(as.numeric(m[i,"headopenid"]) %in% v(subgraph)$openid)){
+        if(!(as.numeric(m[i,"HeadOpenID"]) %in% V(subgraph)$openid)){
             subgraph = add.vertices(subgraph, 1)
-            v(subgraph)[vcount(subgraph)]$openid = as.numeric(m[i,"headopenid"])
-            graphid = which(v(g)$openid == as.numeric(m[i,"headopenid"]))
+            V(subgraph)[vcount(subgraph)]$openid = as.numeric(m[i,"HeadOpenID"])
+            graphid = which(V(g)$openid == as.numeric(m[i,"HeadOpenID"]))
 
-            v(subgraph)[vcount(subgraph)]$graphid = graphid     
-            v(subgraph)[vcount(subgraph)]$longitude = v(g)[graphid]$longitude
-            v(subgraph)[vcount(subgraph)]$latitude =  v(g)[graphid]$latitude
+            V(subgraph)[vcount(subgraph)]$graphid = graphid     
+            V(subgraph)[vcount(subgraph)]$longitude = V(g)[graphid]$longitude
+            V(subgraph)[vcount(subgraph)]$latitude =  V(g)[graphid]$latitude
         }
         
-        if(!(as.numeric(m[i,"tailopenid"]) %in% v(subgraph)$openid)){
+        if(!(as.numeric(m[i,"TailOpenID"]) %in% V(subgraph)$openid)){
             subgraph = add.vertices(subgraph, 1)
-            v(subgraph)[vcount(subgraph)]$openid = as.numeric(m[i,"tailopenid"])
-            graphid = which(v(g)$openid == as.numeric(m[i,"tailopenid"]))
+            V(subgraph)[vcount(subgraph)]$openid = as.numeric(m[i, "TailOpenID"])
+            graphid = which(V(g)$openid == as.numeric(m[i,"TailOpenID"]))
 
-            v(subgraph)[vcount(subgraph)]$graphid = graphid     
-            v(subgraph)[vcount(subgraph)]$longitude = v(g)[graphid]$longitude
-            v(subgraph)[vcount(subgraph)]$latitude =  v(g)[graphid]$latitude
+            V(subgraph)[vcount(subgraph)]$graphid = graphid     
+            V(subgraph)[vcount(subgraph)]$longitude = V(g)[graphid]$longitude
+            V(subgraph)[vcount(subgraph)]$latitude =  V(g)[graphid]$latitude
         }
     
     }
     #add edges
     edges = c()
     for(i in 1:dim(m)[1]){ ## all edges
-        head_id = which(v(subgraph)$openid == as.numeric(m[i,"headopenid"]))
-        tail_id = which(v(subgraph)$openid == as.numeric(m[i,"tailopenid"]))
+        head_id = which(V(subgraph)$openid == as.numeric(m[i,"HeadOpenID"]))
+        tail_id = which(V(subgraph)$openid == as.numeric(m[i,"TailOpenID"]))
         edges = cbind(edges, head_id, tail_id)
     }
 
@@ -103,6 +103,8 @@ plot_graph_with_gps_data <- function(g){
 usecase1 <- function(){
     g = create_igraph()
     write.graph(g, file = "warsaw_graph.gml", format = "gml")
+
+    print(summary(g))
 
     subgraph <- get_subgraph(g)
 
