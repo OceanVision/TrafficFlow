@@ -1,0 +1,10 @@
+D:\Programowanie\ABBITChallenge\CityGraph\Testing\bin\Debug\Testing.exe.config
+D:\Programowanie\ABBITChallenge\CityGraph\Testing\bin\Debug\Testing.exe
+D:\Programowanie\ABBITChallenge\CityGraph\Testing\bin\Debug\Testing.pdb
+D:\Programowanie\ABBITChallenge\CityGraph\Testing\bin\Debug\CityGraph.dll
+D:\Programowanie\ABBITChallenge\CityGraph\Testing\bin\Debug\QuickGraph.dll
+D:\Programowanie\ABBITChallenge\CityGraph\Testing\bin\Debug\CityGraph.pdb
+D:\Programowanie\ABBITChallenge\CityGraph\Testing\bin\Debug\QuickGraph.xml
+D:\Programowanie\ABBITChallenge\CityGraph\Testing\obj\Debug\Testing.csprojResolveAssemblyReference.cache
+D:\Programowanie\ABBITChallenge\CityGraph\Testing\obj\Debug\Testing.exe
+D:\Programowanie\ABBITChallenge\CityGraph\Testing\obj\Debug\Testing.pdb
