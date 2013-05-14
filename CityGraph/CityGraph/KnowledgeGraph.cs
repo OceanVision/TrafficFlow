@@ -9,18 +9,18 @@ using QuickGraph.Algorithms;
 
 namespace Graph
 {
-    public class CityGraph
+    public class KnowledgeGraph
     {
         private AdjacencyGraph<int, Edge<int>> graph;
         private Dictionary<int, double> latitude, longitude;
-        private Dictionary<string, double> distance;
+        private Dictionary<Edge<int>, double> distance;
 
-        public CityGraph(string path)
+        public KnowledgeGraph(string path)
         {
             graph = new AdjacencyGraph<int, Edge<int>>(true);
             latitude = new Dictionary<int, double>();
             longitude = new Dictionary<int, double>();
-            distance = new Dictionary<string, double>();
+            distance = new Dictionary<Edge<int>, double>();
 
             try
             {
@@ -48,9 +48,10 @@ namespace Graph
                 {
                     items = newLine.Split(new String[] {" "}, StringSplitOptions.RemoveEmptyEntries);
 
-                    graph.AddEdge (new Edge<int>(Convert.ToInt32 (items[0]), Convert.ToInt32 (items[1])));
+                    Edge<int> newEdge = new Edge<int>(Convert.ToInt32 (items[0]), Convert.ToInt32 (items[1]));
+                    graph.AddEdge (newEdge);
                     
-                    distance.Add (items[0] + "_" + items[1], Double.Parse(items[2]));
+                    distance.Add (newEdge, Double.Parse(items[2]));
                 }
 
                 fileReader.Close();
@@ -58,7 +59,7 @@ namespace Graph
             }
             catch (Exception e)
             {
-                System.Console.WriteLine(e.ToString());
+                Console.WriteLine(e.ToString());
             }
         }
     }

@@ -7,8 +7,8 @@
     <ProjectGuid>{4CFE5F9C-08B2-4662-BC52-8E4ED273C337}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CityGraph</RootNamespace>
-    <AssemblyName>CityGraph</AssemblyName>
+    <RootNamespace>KnowledgeGraph</RootNamespace>
+    <AssemblyName>KnowledgeGraph</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -51,7 +51,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CityGraph.cs" />
+    <Compile Include="AbstractGraph.cs" />
+    <Compile Include="KnowledgeGraph.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
