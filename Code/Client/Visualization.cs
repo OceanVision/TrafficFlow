@@ -12,22 +12,14 @@ namespace TrafficFlow
     public partial class Visualization : Microsoft.Xna.Framework.Game
     {
         //grafika
-        private GraphicsDeviceManager graphics;
-        private SpriteBatch spriteBatch;
-
-        //mapa
-        private View currentView;
-        private const int mapBuffer = 6;
-        private LinkedList<LinkedList<Tile>> currentTiles;
-        private Texture2D emptyTexture;
-        private Camera2d camera;
-        private const float zoomInc = 0.2f;
+        private GraphicsDeviceManager Graphics;
+        private SpriteBatch SpriteBatch;
 
         public Visualization()
         {
-            graphics = new GraphicsDeviceManager(this);
+            Graphics = new GraphicsDeviceManager(this);
+            Graphics.PreferMultiSampling = true;
             Content.RootDirectory = "Content";
-            graphics.PreferMultiSampling = true;
         }
 
         /// <summary>
@@ -41,8 +33,15 @@ namespace TrafficFlow
             IsMouseVisible = true;
             //TargetElapsedTime = TimeSpan.FromSeconds(1.0f / 40.0f); //ustawia 40 fps
             IsFixedTimeStep = false;    //ustawia wywo³anie Update() bez interwa³u (chyba tak?)
-            camera = new Camera2d(new Viewport(0, 0, 0, 0), 10 * 256 - Window.ClientBounds.Width, 10 * 256 - Window.ClientBounds.Height, 1.0f);
-            initControls();
+            InitControls();
+
+            ZoomState = 3;
+            ZoomRange = new Vector2(1, 3);
+            FirstAssetName = 1346;
+
+            Timer = 0;
+
+            Camera = new Camera2d(new Viewport(0, 0, 0, 0), ZoomState * 5 * 256 - Window.ClientBounds.Width, ZoomState * 5 * 256 - Window.ClientBounds.Height, 1.0f);
             base.Initialize();
         }
 
@@ -52,21 +51,29 @@ namespace TrafficFlow
         /// </summary>
         protected override void LoadContent()
         {
-            graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = 6;
-            spriteBatch = new SpriteBatch(graphics.GraphicsDevice);
-            currentTiles = new LinkedList<LinkedList<Tile>>();
-            emptyTexture = Content.Load<Texture2D>(@"Tiles\empty");
+            Graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = 6;
+            SpriteBatch = new SpriteBatch(Graphics.GraphicsDevice);
+            CurrentTiles = new LinkedList<LinkedList<Tile>>();
+            EmptyTexture = Content.Load<Texture2D>(@"Tiles\empty");
 
-            for (int i = 0; i < mapBuffer; ++i)
-            {
-                currentTiles.AddLast(new LinkedList<Tile>());
-                for (int j = 0; j < mapBuffer; ++j)
-                    currentTiles.Last.Value.AddLast(new Tile(i * 256, j * 256, Content.Load<Texture2D>(@"Tiles\" + i.ToString() + @"\" + (j + 2692).ToString())));
-            }
+            //aktualny zakres kafelek
+            CurrentView = new View(0, MapBuffer - 1, MapBuffer - 1, 0);
 
-            currentView = new View(0, mapBuffer - 1, mapBuffer - 1, 0);
+            //³adujê kafelki
+            LoadTiles();
+
+            //mycha
             Mouse.SetPosition(0, 0);
-            originalMouseState = Mouse.GetState();
+            originalMouseState = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+
+            //samochód - test
+            route = new Queue<Tuple<Vector2, Vector2>>();
+            route.Enqueue(new Tuple<Vector2, Vector2>(new Vector2(2, 310), new Vector2(309, 441)));
+            //route.Enqueue(new Tuple<Vector2, Vector2>(new Vector2(ZoomState * 152, ZoomState * 234), new Vector2(ZoomState * 164, ZoomState * 243)));
+            //route.Enqueue(new Tuple<Vector2, Vector2>(new Vector2(ZoomState * 164, ZoomState * 243), new Vector2(ZoomState * 173, ZoomState * 253)));
+            //route.Enqueue(new Tuple<Vector2, Vector2>(new Vector2(ZoomState * 173, ZoomState * 253), new Vector2(ZoomState * 210, ZoomState * 317)));
+            
+            Car1 = new Car(route, 20);
         }
 
         /// <summary>
@@ -85,11 +92,18 @@ namespace TrafficFlow
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-            cameraUpdate();
-            mouseUpdate();
+            Timer += gameTime.ElapsedGameTime.TotalSeconds;
 
-            //TODO: Poprawiæ wczytywanie kafelek
-            tilesUpdate();
+            CameraUpdate();
+            MouseUpdate();
+            TilesUpdate(); //TODO: Poprawiæ wczytywanie kafelek
+
+            if (Car1.Driving())
+                Car1.Update((float)Timer);
+            else
+                Car1.AddRoute(route);
+            
+            //Debug.Text = Timer + " " + Car1.Time + " " + Car1.Finished;
             base.Update(gameTime);
         }
 
@@ -100,27 +114,32 @@ namespace TrafficFlow
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            graphics.GraphicsDevice.Clear(Color.LightGray);
-            spriteBatch.Begin(SpriteSortMode.Deferred,
-                    null, null, null, null, null,
-                    camera.GetTransformation());
+            Graphics.GraphicsDevice.Clear(new Color(242, 239, 233));
+            SpriteBatch.Begin(SpriteSortMode.Deferred, null, null, null, null, null, Camera.GetTransformation());
             /// -------------------------------------
 
-
-
-            foreach (LinkedList<Tile> tmp in currentTiles)
+            //prze³adowanie kafelek
+            foreach (LinkedList<Tile> tmp in CurrentTiles)
                 foreach (Tile tile in tmp)
                 {
-                    spriteBatch.Draw(tile.texture, new Vector2(tile.X, tile.Y), Color.White);
+                    SpriteBatch.Draw(tile.texture, new Vector2(tile.X, tile.Y), Color.White);
                 }
 
-            //spriteBatch.DrawCircle(new Vector2(152.0f - 1.3f, 234.0f + 4.0f), 4.0f, 100, new Color(100, 100, 100, 255), 4);
-            spriteBatch.DrawLine(new Vector2(3, 155), new Vector2(152, 234), new Color(100, 100, 100, 255), 2);
-            spriteBatch.DrawLine(new Vector2(152, 234), new Vector2(164, 243), new Color(100, 100, 100, 255), 2);
-            spriteBatch.DrawLine(new Vector2(164, 243), new Vector2(173, 253), new Color(100, 100, 100, 255), 2);
-            spriteBatch.DrawLine(new Vector2(173, 253), new Vector2(210, 317), new Color(178, 34, 34, 255), 2);
+            //rysowanie linii - test
+            /*foreach (Line line in Lines)
+            {
+                SpriteBatch.DrawLine(new Vector2(ZoomState * line.Start.X, ZoomState * line.Start.Y), new Vector2(ZoomState * line.End.Y, ZoomState * line.End.Y), line.Color, 2);
+            }*/
+            SpriteBatch.DrawLine(new Vector2(ZoomState * 3, ZoomState * 155), new Vector2(ZoomState * 152, ZoomState * 234), new Color(100, 100, 100, 255), 2);
+            SpriteBatch.DrawLine(new Vector2(ZoomState * 152, ZoomState * 234), new Vector2(ZoomState * 164, ZoomState * 243), new Color(100, 100, 100, 255), 2);
+            SpriteBatch.DrawLine(new Vector2(ZoomState * 164, ZoomState * 243), new Vector2(ZoomState * 173, ZoomState * 253), new Color(100, 100, 100, 255), 2);
+            SpriteBatch.DrawLine(new Vector2(ZoomState * 173, ZoomState * 253), new Vector2(ZoomState * 210, ZoomState * 317), new Color(178, 34, 34, 255), 2);
+
+            //samochód - test
+            SpriteBatch.DrawCircle(Car1.Pos, 4, 10, Color.DimGray, 4);
+
             /// -------------------------------------
-            spriteBatch.End();
+            SpriteBatch.End();
             base.Draw(gameTime);
         }
     }
