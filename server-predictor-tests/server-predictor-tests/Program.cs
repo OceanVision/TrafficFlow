@@ -51,6 +51,9 @@ namespace server_predictor_tests
             smrVelocity.train_model(train_file_velocity); //narazie wylaczone
         }
 
+
+
+
         
     }
 
@@ -58,14 +61,19 @@ namespace server_predictor_tests
     {
         static void Main(string[] args)
         {
-            // var g = new AdjacencyGraph<int, Edge<int>>();
-            //using (var xreader = XmlReader.Create("data/warsaw_graph.gml"))
+            //var g = new AdjacencyGraph<Tuple<int,float> , Edge<Tuple<int,float>>>();
+            //using (var xreader = XmlReader.Create("tmp.xml"))
             //{
-             //   g.DeserializeFromGraphML(xreader,
-             //       id => int.Parse(id),
-             //       (source, target, id) => new Edge<int>(source, target)
-             //   );
-            //}
+            //    g.DeserializeFromGraphML(xreader,
+            //        (id, latitude) => new Tuple<int, float>(int.Parse(id.Substring(1, 1)), float.Parse(latitude.Substring(1, 1))),
+            //        (source, target, id)  => new Edge<Tuple<int, float>>(10,10)
+            //   );
+           // }
+
+          //  Logger.Instance.log("Graph loaded successfully from .xml");
+
+
+
 
             TrafficPredictionModel1 tpm1 = new TrafficPredictionModel1();
             
