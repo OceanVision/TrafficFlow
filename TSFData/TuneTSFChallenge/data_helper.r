@@ -5,9 +5,35 @@ TRAINDATA_COUNT = 100 # no of simulation cycles
 TRAINDATA_SLOTSIZE = 30 # no of minute to take into account. NOTICE TRAINDATA CYCLE HAS TO BE 0 MOD TRAINDATA_SLOTSIZE
 TRAINDATA_PREDICTSIZE = 10#  no of minutes to predict
 TRAINDATA_INCREMENT = 30 # overlapping controlling
+TRAINDATA_LINK_COUNT = 20 # number of observed links
 ### End of constant section ###
 
-util.load_train <- function(file_name = "traffic_training.txt"){
+
+util.load_test <- function(file_name = "traffic_test.txt"){
+    ### Read raw data ### 
+    test.raw = as.matrix(read.csv(file=file_name,head=F,sep=" ",colClasses = rep("numeric",TRAINDATA_LINK_COUNT)))
+    
+    ### Prepare sample list basing on constants ###
+    test.samples = list()
+    at = 1; sample_count = 0
+    while(1){
+        sample_count = sample_count + 1
+        test.samples[[sample_count]] = list(x = test.raw[at:(at+TRAINDATA_SLOTSIZE-1),])
+        at = at + TRAINDATA_SLOTSIZE
+        if(at > dim(test.raw)[1]) break
+    }
+    return(list(raw = test.raw, samples = test.samples, link_count = dim(test.samples[[1]]$x)[2], minutes_sample = dim(test.samples[[1]]$x)[1], sample_count = length(test.samples), isTrain = F))
+}
+
+### wrapper to get only samples ###
+util.load_train_samples <- function(file_name = "traffic_training.txt", increment = -1){
+    train = util.load_train(file_name, increment)   
+ 
+    return(list(samples = train$samples))
+}
+
+util.load_train <- function(file_name = "traffic_training.txt", increment = -1){
+    if(increment == -1) increment = TRAINDATA_INCREMENT
     ### Read raw data ### 
     train.raw = read.csv(file=file_name,head=F,sep=" ")
     train.cycles = list()
@@ -20,12 +46,26 @@ util.load_train <- function(file_name = "traffic_training.txt"){
     ### Prepare sample list basing on constants ###
     train.samples = list()
     at = 1; sample_count = 0
+    at_cycle = 1;
     while(1){
+
         sample_count = sample_count + 1
         train.samples[[sample_count]] = list(x = train.raw[at:(at+TRAINDATA_SLOTSIZE-1),], y = train.raw[(at+TRAINDATA_SLOTSIZE):(at+TRAINDATA_SLOTSIZE+TRAINDATA_PREDICTSIZE-1),])
-        at = at + TRAINDATA_INCREMENT
+        at_cycle = at %% TRAINDATA_CYCLE
+
+        
+        if(at_cycle + TRAINDATA_SLOTSIZE + TRAINDATA_PREDICTSIZE > TRAINDATA_CYCLE){
+            at_cycle = 0
+            at = TRAINDATA_CYCLE*as.integer(at/TRAINDATA_CYCLE) + TRAINDATA_CYCLE + 1
+        } else{
+            at_cycle = at %% TRAINDATA_CYCLE
+            at = at + increment 
+        }
+
         if(at > dim(train.raw)[1]) break
     }
+
+
     return(list(raw = train.raw, cycles = train.cycles, samples = train.samples))
 }
 
@@ -43,5 +83,8 @@ util.evaluate.file <- function(test_file = "solutions/traffic_example.txt", targ
     library("hydroGOF") ## rmse implementation ##
     target = read.csv(file = test_file,head=F,sep=" ")
     sol = read.csv(file = target_file,head=F,sep=" ")
+    print(dim(target))
     return(rmse(as.vector(as.matrix(target)),as.vector(as.matrix(sol))))
 }
+
+
