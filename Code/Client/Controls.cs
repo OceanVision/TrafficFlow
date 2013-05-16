@@ -9,48 +9,56 @@ namespace TrafficFlow
 {
     public partial class Visualization : Microsoft.Xna.Framework.Game
     {
-        private Button zoomIn, zoomOut;
-        public Label debug;
+        private Button ZoomIn, ZoomOut;
+        public Label Debug;
 
         //initializes all controls
-        public void initControls()
+        public void InitControls()
         {
             //zoom buttons initialization
-            zoomIn = new Button();
-            zoomIn.Text = "Przybliż";
-            zoomIn.Size = new Size(100, 30);
-            zoomIn.FlatStyle = FlatStyle.Flat;
-            zoomIn.ForeColor = Color.FromArgb(55, 53, 53);
-            zoomIn.Font = new Font("Segoe UI", 12, FontStyle.Bold);
-            zoomIn.Location = new Point(Window.ClientBounds.Width - 130, Window.ClientBounds.Height - 100);
-            Control.FromHandle(Window.Handle).Controls.Add(zoomIn);
-            zoomIn.Click += new System.EventHandler(zoomIn_Click);
+            ZoomIn = new Button();
+            ZoomIn.Text = "Przybliż";
+            ZoomIn.Size = new Size(100, 30);
+            ZoomIn.FlatStyle = FlatStyle.Flat;
+            ZoomIn.ForeColor = Color.FromArgb(55, 53, 53);
+            ZoomIn.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+            ZoomIn.Location = new Point(Window.ClientBounds.Width - 130, Window.ClientBounds.Height - 100);
+            Control.FromHandle(Window.Handle).Controls.Add(ZoomIn);
+            ZoomIn.Click += new System.EventHandler(ZoomIn_Click);
 
-            zoomOut = new Button();
-            zoomOut.Text = "Oddal";
-            zoomOut.Size = new Size(100, 30);
-            zoomOut.FlatStyle = FlatStyle.Flat;
-            zoomOut.ForeColor = Color.FromArgb(55, 53, 53);
-            zoomOut.Font = new Font("Segoe UI", 12, FontStyle.Bold);
-            zoomOut.Location = new Point(Window.ClientBounds.Width - 130, Window.ClientBounds.Height - 60);
-            Control.FromHandle(Window.Handle).Controls.Add(zoomOut);
-            zoomOut.Click += new System.EventHandler(zoomOut_Click);
+            ZoomOut = new Button();
+            ZoomOut.Text = "Oddal";
+            ZoomOut.Size = new Size(100, 30);
+            ZoomOut.FlatStyle = FlatStyle.Flat;
+            ZoomOut.ForeColor = Color.FromArgb(55, 53, 53);
+            ZoomOut.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+            ZoomOut.Location = new Point(Window.ClientBounds.Width - 130, Window.ClientBounds.Height - 60);
+            Control.FromHandle(Window.Handle).Controls.Add(ZoomOut);
+            ZoomOut.Click += new System.EventHandler(ZoomOut_Click);
 
-            debug = new Label();
-            debug.AutoSize = true;
-            debug.Text = "Start";
-            debug.Location = new Point(Window.ClientBounds.Width - 200, Window.ClientBounds.Height - 60);
-            Control.FromHandle(Window.Handle).Controls.Add(debug);
+            Debug = new Label();
+            Debug.AutoSize = true;
+            Debug.Text = "Start";
+            Debug.Location = new Point(60, Window.ClientBounds.Height - 60);
+            Control.FromHandle(Window.Handle).Controls.Add(Debug);
         }
 
-        private void zoomIn_Click(object sender, EventArgs e)
+        private void ZoomIn_Click(object sender, EventArgs e)
         {
-            zoomUpdate(zoomInc);
+            if (ZoomState < ZoomRange.Y)
+            {
+                ++ZoomState;
+                LoadTiles();
+            }
         }
 
-        private void zoomOut_Click(object sender, EventArgs e)
+        private void ZoomOut_Click(object sender, EventArgs e)
         {
-            zoomUpdate(-zoomInc);
+            if (ZoomState > ZoomRange.X)
+            {
+                --ZoomState;
+                LoadTiles();
+            }
         }
     }
 }
