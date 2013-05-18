@@ -10,8 +10,8 @@ namespace Graph
     public class MyEdge : IEdge<MyNode>
     {
         private MyNode startNode { get; set; }
-        private MyNode endNode { get; set; }
-        private double distance { get; set; }
+        public MyNode endNode { get; set; }
+        public double distance { get; set; }
         private double lanes { get; set; }
         private double avgcard { get; set; }
 
