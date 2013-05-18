@@ -173,6 +173,10 @@ namespace Graph
                     }
                 }
             } // end while
+            
+            // last link
+            if (line == null)
+                linksDictionary.Add(actualIndex, links);
 
             linksReader.Close();
             sourceStream.Close();
@@ -236,6 +240,10 @@ namespace Graph
                 }
             } // end while
 
+            // last link
+            linksWriter.WriteLine(actualTime + " " + actualIndex + " " + Math.Round(velocity / weight, 3) + " " +
+                Math.Round(congestion / weight, 3));
+
             linksReader.Close();
             sourceStream.Close();
             
@@ -297,6 +305,9 @@ namespace Graph
                     }
                 }
             } // end while
+
+            // last link
+            linksWriter.WriteLine(actualTime + " " + actualIndex + " " + Math.Round(congestion / weight, 3));
 
             linksReader.Close();
             sourceStream.Close();
