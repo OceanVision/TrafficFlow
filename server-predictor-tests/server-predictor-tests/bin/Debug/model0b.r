@@ -44,16 +44,35 @@ source("graph_helper.r")
 ### Data regression 0b model ###
 
 
+### Predict_options description ###
+
+# ahead - ahead numbers to predict in the time_series
+# ahead_data - ahead number included in the data (may be needed to be summed out)
+# look_behind_train - look behind included in the data (NOT IMPLEMENTED)
+# look_behind - may be needed to sum out (NOT IMPLEMENTED)
+
+### End of predict_options description ###
+
 ### Has to be specified beforehand - globally used###
 model0b.getDefaultPredictOptions <- function(){
     #Note: specifies data format, each node can do the way it wants
-    return(list(look_behind = 30, look_behind_prediction_self=30, look_behind_prediction = 10, ahead = 10, link_count=20))
-}
+    return(list(look_behind = 30, 
+look_behind_prediction_self=30, 
+look_behind_prediction = 10, 
+ahead = 2,
+ahead_data = 10, 
+link_count=20, 
+take_neigh_count =10))
+	}
 
 model0b.prepareData <- function(train = train, predict_options, isTrain = T){
-  	train$link_count = dim(train$samples[[1]]$x)[2] 
+  	
+	### Read counts ###
+	train$link_count = dim(train$samples[[1]]$x)[2] 
 	train$minutes_sample = dim(train$samples[[1]]$x)[1]
 	train$sample_count = length(train$samples)
+
+
 
 
 	  ### Prepare data for regression ###
@@ -67,8 +86,9 @@ model0b.prepareData <- function(train = train, predict_options, isTrain = T){
     ###predict_ahead = 10 # window span to predict ahead
     ###predict_link_count = 1 # length of (predict_link_id)
 
+
+    #auxiliary predict_options params#
     predict_options$x_size = predict_options$link_count*predict_options$look_behind
-    
     if(isTrain == T) predict_options$y_size = predict_options$ahead*predict_options$link_count
     else predict_options$y_size = 0
 
@@ -80,12 +100,12 @@ model0b.prepareData <- function(train = train, predict_options, isTrain = T){
 
     indexes = (as.integer((0:(predict_options$x_size-1) )/predict_options$look_behind) + 1)
     indexes_y = (as.integer((0:(predict_options$y_size-1) )/predict_options$ahead) + 1)
+
     if(isTrain == T){
         indexes_time = rep(1:predict_options$look_behind, (train$link_count))
         indexes_time_y = rep(1:predict_options$ahead, (predict_options$ahead))
         colnames(data_col) = c(paste("L", indexes, "T", indexes_time, sep=""), paste("Y", indexes_y, "T", indexes_time_y, sep=""))
     }else{
-        
         indexes_time = rep(1:predict_options$look_behind, (train$link_count))
         colnames(data_col) = paste("L", indexes, "T", indexes_time, sep="") 
     }
@@ -96,14 +116,39 @@ model0b.prepareData <- function(train = train, predict_options, isTrain = T){
 
     ### Process individual samples ###
     for(i in 1:train$sample_count){ 
+        if(i%100 == 0) print(i)
+
         train$samples[[i]]$x = train$samples[[i]]$x[(train$minutes_sample - predict_options$look_behind+1):train$minutes_sample,] # get specified time sample
         train$samples[[i]]$x = c(as.matrix(train$samples[[i]]$x)) 
         data_col[i,1:predict_options$x_size] = train$samples[[i]]$x
 
         if(isTrain == T){
             train$samples[[i]]$y = as.matrix(train$samples[[i]]$y)  
-            train$samples[[i]]$y = as.matrix(train$samples[[i]]$y[1:predict_options$ahead, ]) # choose look ahead interval
-            data_col[i, (predict_options$x_size+1):ncol(data_col)] = c(train$samples[[i]]$y)
+            train$samples[[i]]$y = as.matrix(train$samples[[i]]$y[1:predict_options$ahead_data, ]) # choose look ahead interval
+            #print(dim(train$samples[[i]]$y))
+		## SUMMING OUT ##
+		if(predict_options$ahead != predict_options$ahead_data){
+			#print("summing out")
+			by_sum = as.integer(predict_options$ahead_data / predict_options$ahead)
+			
+			last_summed_out = 0
+			index = 1
+			while(1){
+				#print(index)
+				#print(last_summed_out)
+				train$samples[[i]]$y[index,] = colSums(train$samples[[i]]$y[((index-1)*by_sum+1):(index*by_sum),])	
+				index = index +1
+				last_summed_out = last_summed_out + by_sum 
+				if(index > predict_options$ahead) break
+				
+			}
+			#truncate summed out terms
+			
+			train$samples[[i]]$y = train$samples[[i]]$y[1:predict_options$ahead,]
+			#print("done")
+		}
+		#print(train$samples[[i]]$y)
+		data_col[i, (predict_options$x_size+1):ncol(data_col)] = c(train$samples[[i]]$y)
         }
     }
 
@@ -169,11 +214,11 @@ model0b.applyModel0b<-function(model0b, test_data, predict_options){
 ### Perform whole (required) prediction ###
 model0b.makePrediction <- function(link_models, x, predict_options){
    y = matrix(0, ncol = predict_options$link_count, nrow = 1)
-
+   
    for(i in 1:predict_options$link_count){
         y[,i] = model0b.applyModel0b(link_models[[i]], as.vector(x[link_models[[i]]$x_params]),predict_options) 
    } 
-  
+
    return(y)
 }
 
@@ -206,9 +251,9 @@ model0b.train<-function(data_file_name, predict_options, save_file_name){
     		dist_corr = order(corr[,i])
     		subset_x=c()
      
-   		for(j in 1:10){
-     		 start_index = 30 - predict_options$look_behind_prediction + 1
-    	    	 if(j==0) start_index = 30 - predict_options$look_behind_prediction_self + 1
+   		for(j in 1:predict_options$take_neigh_count){
+     		 start_index = predict_options$look_behind - predict_options$look_behind_prediction + 1
+    	    	 if(j==0) start_index = predict_options$look_behind - predict_options$look_behind_prediction_self + 1
     	   	 subset_x = c(subset_x,c(paste(paste("L",dist_corr[j],sep=""),"T",start_index:30, sep="")))
     	 	}
  	   	model0b.model[[i]] = model0b.getModel0b(model0b.data[,union(subset_x,subset_y)], subset_x, subset_y, predict_options, c())
@@ -219,33 +264,47 @@ model0b.train<-function(data_file_name, predict_options, save_file_name){
 }
 
 
+model0b.calculateGloballyGraph<- function(){
+	assign("global_g", read.graph(file = "data/warsaw_graph.gml", format = "gml"), envir = globalenv())
+	assign("global_subgraph", get_subgraph(global_g), envir = globalenv())
+	assign("global_corr" , get_distance_corr(global_subgraph), envir = globalenv())
+}
+### Assumes that model0b.calculateGloballyGraph() was called prior to this call ###
+### To do: move to pairwise.r (better idea probably)
+model0b.getMostImportantNeighbours<-function(id, how_many =5 ){
+	
+	print(id)
+	most_important = order(global_corr[,id])
+	return(most_important[1:how_many]) # model0b returns constant number of important edges
+}
 
-
-
-#predict_options = predict_options_tmp
+model0b.test<-function(){
+predict_options = predict_options_tmp
 #train_model0b("data/model0b.data.RDa", predict_options_tmp, "data/model0b.trained_model.RDa")
-#load(file = "data/model0b.trained_model.RDa")
+load(file = "data/model0b.trained_model.RDa")
 
-#test = util.load_test() # isTrain included
-#data_transform = model0b.prepareData(test, predict_options, isTrain = F) ## to tez bedzie do wymienienia 
-#y=(model0b.makePrediction(link_models, data_transform[1,], predict_options))
+test = util.load_test() # isTrain included
+data_transform = model0b.prepareData(test, predict_options, isTrain = F) ## to tez bedzie do wymienienia 
+y=(model0b.makePrediction(model0b.model, data_transform[1,], predict_options))
 
 #print("done")
-#y_collected = y
-#for(i in 2:dim(data_transform)[1]){
-#    if(i%%100==0) print(i)
-#    y_collected = rbind(y_collected, model0b.makePrediction(link_models, data_transform[i,], predict_options))
-#}
-#print(summary(y_collected))
+y_collected = y
+for(i in 2:dim(data_transform)[1]){
+    if(i%%100==0) print(i)
+    y_collected = rbind(y_collected, model0b.makePrediction(model0b.model, data_transform[i,], predict_options))
+}
 
+#print(summary(y_collected))
+print(y_collected[1,])
+print(data_transform[1,])
 #save(y_collected, file="tmp.RDa")
 #print(dim(y_collected))
 
-#print(util.evaluate.matrix(y_collected))
+print(util.evaluate.matrix(y_collected))
 
-#test_data = util.load_test()
+test_data = util.load_test()
 #print(summary(test_data))
-
+}
 
 
 

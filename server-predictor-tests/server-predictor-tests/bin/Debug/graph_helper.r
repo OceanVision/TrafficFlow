@@ -113,8 +113,8 @@ usecase1 <- function(){
 }
 
 
-g = read.graph(file = "warsaw_graph.gml", format = "gml")
-subgraph <- get_subgraph(g)
+#g = read.graph(file = "warsaw_graph.gml", format = "gml")
+#subgraph <- get_subgraph(g)
 
 
 
