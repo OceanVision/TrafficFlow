@@ -88,6 +88,12 @@ namespace TrafficFlow
             }
         }
 
+        public void Reinitialize(int worldWidth, int worldHeight)
+        {
+            _worldWidth = worldWidth;
+            _worldHeight = worldHeight;
+        }
+
         #endregion
 
         public Matrix GetTransformation()

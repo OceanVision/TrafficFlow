@@ -12,6 +12,7 @@ namespace TrafficFlow
         {
             using (Visualization game = new Visualization())
             {
+                ((System.Windows.Forms.Form)System.Windows.Forms.Form.FromHandle(game.Window.Handle)).Icon = new System.Drawing.Icon("icon.ico");
                 game.Run();
             }
         }
