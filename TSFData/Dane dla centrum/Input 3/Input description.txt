@@ -1,0 +1,19 @@
+Initial number of cars: 30000
+Additional cars: 	20
+Time gap [steps]: 	1
+Step [msec]:		20000
+Refresh [steps]:	1
+Limit [steps]:		360
+Cross. pen.		25%
+Turn pen.		50%
+Accelerate:		10 km/h
+
+Jeden krok odpowiada 20 sekundom,
+limit kroków wynosi 360 wiêc ka¿da
+symulacja bêdzie opisywa³a 2 godziny ruchu.
+
+Pliki wyjœciowe nie zawsze s¹ dobrze opisane,
+tzn w pierwszej kolumnie mylone s¹ sekundy z minutami z godzinami
+i z pojedyñczymi krokami ale z tych danych
+mo¿na wywnioskowaæ czym jest Time w plikach wyjœciowych
+bo ostatnia wartoœæ w pliku odpowiada dwóm godzinom.

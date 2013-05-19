@@ -11,7 +11,7 @@ namespace Graph
         private int id { get; set; }
         private double latitude { get; set; }
         private double longitude { get; set; }
-        private string openid { get; set; }
+        public string openid { get; set; }
 
         public MyNode(int new_id)
         {
