@@ -20,7 +20,8 @@ namespace server_predictor_tests
             get;
             set;
         }//engine to R
-        private string m_trained_model_file; //saved trained model
+        private string m_trained_model_file; //sed trained model
+        private string m_traffic_test_file;
         private string m_source_file;
         private string m_alg_name;
         private int m_ahead;
@@ -36,6 +37,7 @@ namespace server_predictor_tests
             m_source_file = source_file; m_alg_name = alg_name;
             m_trained_model_file = "data/" + m_name + ".trained_model.RDa"; //setting up used file paths
             m_predict_var_name = "predict_options_" + m_name;
+            m_traffic_test_file = "data/traffic_test." + m_name + ".txt";
 
 
             isTrained = false;
@@ -66,8 +68,9 @@ namespace server_predictor_tests
                     Logger.Instance.log("Error initializing R.NET engine");
                     throw (e);
                 }
+                Logger.Instance.log("Correctly initialized R.NET engine");
             }
-            Logger.Instance.log("Correctly initialized R.NET engine");
+            
             
             try
             {
@@ -83,11 +86,16 @@ namespace server_predictor_tests
 
                 SingularModelR.engine.Evaluate(m_predict_var_name + "= " + m_alg_name + ".getDefaultPredictOptions()");
 
-                SingularModelR.engine.Evaluate(m_predict_var_name+"= " + look_behind.ToString());
+                SingularModelR.engine.Evaluate(m_predict_var_name+"$look_behind= " + look_behind.ToString());
                 SingularModelR.engine.Evaluate(m_predict_var_name+"$link_count= " + link_count.ToString());
                 SingularModelR.engine.Evaluate(m_predict_var_name + "$look_behind_prediction= " + look_behind_prediction.ToString());
                 SingularModelR.engine.Evaluate(m_predict_var_name + "$look_behind_prediction_self= " + look_behind_prediction_self.ToString());
                 SingularModelR.engine.Evaluate(m_predict_var_name + "$ahead= " + ahead.ToString());
+                SingularModelR.engine.Evaluate(m_predict_var_name + "$name=\"" + m_name.ToString()+"\"");
+                SingularModelR.engine.Evaluate("model0b.prepareDependList(file_name=\""
+                    + m_traffic_test_file +
+                    "\",predict_options=" + m_predict_var_name+")");
+                //SingularModelR.engine.Evaluate(m_predict_var_name + "$name= " + this.m_name.ToString());
                 Logger.Instance.log("predict_options set correctly");
 
                 SingularModelR.engine.Evaluate(m_alg_name + ".calculateGloballyGraph()");
@@ -172,6 +180,7 @@ namespace server_predictor_tests
                 Logger.Instance.log_error("Error while predicting " + e.ToString());
                 throw (e);
             }
+            //0 is dummy !!
             double[] Y_output = new double[Y.Length + 1];
             Y.AsNumeric().CopyTo(Y_output, Y.Length,  0,  1);
             //Console.WriteLine(Y.First().ToString());

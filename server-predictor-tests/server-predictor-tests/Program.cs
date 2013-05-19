@@ -59,7 +59,7 @@ namespace server_predictor_tests
                 try{
                      col=0;
                     foreach(string val in values) {
-                        matrix[row][col++] = double.Parse(val);
+                        matrix[row][col++] = double.Parse(val, System.Globalization.CultureInfo.InvariantCulture);
                     }
                     
                     Logger.Instance.log_ifn(ncol == col, "wrong column number specified!"); //warning message
@@ -70,7 +70,7 @@ namespace server_predictor_tests
                     
                 }
 
-                if (row == nrow - 1) break;
+                if (row == nrow) break;
             }
             return matrix;
         }
@@ -89,6 +89,8 @@ namespace server_predictor_tests
         public PairwiseModelR pmrCars;
         public PairwiseModelR pmrVelocity;
 
+        public double[][] normalizeFactors; //loads after training models to the memory (init phase and after every train phase)
+
         //loaded or set during the construction
         Object[] abstract_edges_mapping; //mapping of the abstract edges onto the AbstractGraph
         
@@ -104,35 +106,36 @@ namespace server_predictor_tests
             this.ds = ds;
 
             //will be calculated in the init() phase//
-            modelOptions["Velocity_states_count"] = -1;
-            modelOptions["Cars_states_count"] = -1;
+            modelOptions["Velocity_states_count"] = -1.0;
+            modelOptions["Cars_states_count"] = -1.0;
 
-            modelOptions["Velocity_step"] = 10;
-            modelOptions["Velocity_max"] = 60;
+            modelOptions["Velocity_step"] = 0.1;
+            modelOptions["Velocity_max"] = 1.0;
 
-            modelOptions["Cars_step"] = 50;
-            modelOptions["Cars_max"] = 200;
+            modelOptions["Cars_step"] = 0.1;
+            modelOptions["Cars_max"] = 1.0;
 
-            modelOptions["step_time"] = 5; //5 min prediction step
+            modelOptions["step_time"] = 5.0; //5 min prediction step
 
             //setup options, probably will remain static throught program//
-            
-            modelOptions["smrCars_ahead"] = 10; //time that is to be predicted ahead (and returned by predict)
-            modelOptions["smrCars_link_count"] = 20;
-            modelOptions["smrCars_look_behind_prediction"] = 10;
-            modelOptions["smrCars_look_behind"] = 30;
-            modelOptions["smrCars_look_behind_prediction_self"] = 30;
+
+            modelOptions["smrCars_ahead_data"] = 10.0;//
+            modelOptions["smrCars_ahead"] = 2.0; //time that is to be predicted ahead (and returned by predict)
+            modelOptions["smrCars_link_count"] = 20.0;
+            modelOptions["smrCars_look_behind_prediction"] = 10.0;
+            modelOptions["smrCars_look_behind"] = 30.0;
+            modelOptions["smrCars_look_behind_prediction_self"] = 30.0;
 
             //~!-------------------------TODO: REPAIR MODEL0B.R----------------------!//
-            modelOptions["smrCars_ahead_ret"] = 1;
+            modelOptions["smrCars_ahead_ret"] = 1.0;
 
 
-
-            modelOptions["smrVelocity_ahead"] = 10;
-            modelOptions["smrVelocity_link_count"] = 20;
-            modelOptions["smrVelocity_look_behind_prediction"] = 10;
-            modelOptions["smrVelocity_look_behind"] = 30;
-            modelOptions["smrVelocity_look_behind_prediction_self"] = 30;           
+            modelOptions["smrVelocity_ahead_data"] = 10.0;
+            modelOptions["smrVelocity_ahead"] = 2.0;
+            modelOptions["smrVelocity_link_count"] = 20.0;
+            modelOptions["smrVelocity_look_behind_prediction"] = 10.0;
+            modelOptions["smrVelocity_look_behind"] = 30.0;
+            modelOptions["smrVelocity_look_behind_prediction_self"] = 30.0;           
         }
 
         //Initialize
@@ -140,23 +143,27 @@ namespace server_predictor_tests
         {  
             // step/max - responsible for setting discretization steps //
             smrVelocity = new SingularModelR("model0b.r", "model0b", "smrVelocity");
-            Logger.Instance.log(((int)modelOptions["smrVelocity_look_behind_prediction_self"]).ToString());
-            smrVelocity.init(
-               (int)modelOptions["smrVelocity_look_behind"],
-               (int)modelOptions["smrVelocity_link_count"],
-               (int)modelOptions["smrVelocity_look_behind_prediction_self"],
-               (int)modelOptions["smrVelocity_look_behind_prediction"],
-               (int)modelOptions["smrVelocity_ahead"]
-            );
-           
+        
+            //For the demo version: only one value prediction//
+           // smrVelocity.init(
+           //    getIntOpt("Velocity","look_behind") ,
+           //    getIntOpt("Velocity","link_count") ,
+          //     getIntOpt("Velocity","look_behind_prediction_self") ,
+           //    getIntOpt("Velocity","look_behind_prediction") ,
+           //    getIntOpt("Velocity","ahead") 
+           // );
+
+
             smrCars = new SingularModelR("model0b.r","model0b","smrCars");
+
             smrCars.init(
-               (int)modelOptions["smrCars_look_behind"],
-               (int)modelOptions["smrCars_link_count"],
-               (int)modelOptions["smrCars_look_behind_prediction_self"],
-               (int)modelOptions["smrCars_look_behind_prediction"],
-               (int)modelOptions["smrCars_ahead"]
-            ); //static problem - hopefully will be resolved in the next version of R.NET library
+               getIntOpt("Cars", "look_behind"),
+               getIntOpt("Cars", "link_count"),
+               getIntOpt("Cars", "look_behind_prediction_self"),
+               getIntOpt("Cars", "look_behind_prediction"),
+               getIntOpt("Cars", "ahead")
+            );
+
 
             pmrCars = new PairwiseModelR("pmrCars");
             pmrVelocity = new PairwiseModelR("pmrVelocity");
@@ -168,13 +175,34 @@ namespace server_predictor_tests
 
             Logger.Instance.log("SingularModels init completed");
 
-            int states_count_cars = (int)((int)modelOptions["Cars_max"] / (float)( (int)modelOptions["Cars_step"])) + 1;
+            int states_count_cars = (int)(getDblOpt("Cars", "max") / (float)(getDblOpt("Cars","step"))) + 1;
            
             states_cars = new int[states_count_cars];
             for (int i = 0; i < states_count_cars; ++i)
-                states_cars[i] = ((int)modelOptions["Cars_step"]) * i;
+                states_cars[i] = (getIntOpt("Cars","step")) * i;
 
-            modelOptions["Cars_states_count"] = states_count_cars;
+            modelOptions["Cars_states_count"] = (double)states_count_cars;
+
+
+            int states_count_velocity = (int)(getDblOpt("Velocity", "max") / (float)(getDblOpt("Velocity", "step"))) + 1;
+
+            states_velocity = new int[states_count_cars];
+            for (int i = 0; i < states_count_cars; ++i)
+                states_velocity[i] = (getIntOpt("Velocity", "step")) * i;
+
+            modelOptions["Velocity_states_count"] = (double)states_count_velocity;
+
+            //!----- 2->4 -----!//
+            try
+            {
+                this.normalizeFactors = ds.readMatrixCsv("data/general.normalize_factors.txt", false, 2, getIntOpt("Cars", "link_count"));
+            }
+            catch (Exception e)
+            {
+                Logger.Instance.log_error("Error reading normalize factors " + e.ToString());
+                throw (e);
+            }
+            Console.WriteLine(this.normalizeFactors[1][1]);
 
         }
 
@@ -190,18 +218,18 @@ namespace server_predictor_tests
         public Tuple<Variable<int>[], Variable<int>[], Variable<Vector>[] > setupSubnetwork(string subnetwork_name) 
         {
             // =======Prepare 2BN Slice of the subnetwork)================ //
-            Variable<int>[] Y_before = new Variable<int>[(int)modelOptions["smr"+subnetwork_name+"_link_count"] + 1];
-            Variable<int>[] Y_next = new Variable<int>[(int)modelOptions["smr" + subnetwork_name + "_link_count"] + 1];
+            Variable<int>[] Y_before = new Variable<int>[getIntOpt(subnetwork_name,"link_count") + 1];
+            Variable<int>[] Y_next = new Variable<int>[getIntOpt(subnetwork_name, "link_count") + 1];
            // Variable<IDistribution<int>>[] Y_next_prior = new Variable<IDistribution<int>>[(int)modelOptions["smr" + subnetwork_name + "_link_count"] + 1];
 
 
 
-            Variable<Vector>[] Y_next_prior = new Variable<Vector>[(int)modelOptions["smr" + subnetwork_name + "_link_count"] + 1];
+            Variable<Vector>[] Y_next_prior = new Variable<Vector>[getIntOpt(subnetwork_name,"link_count")  + 1];
             
             try
             {
 
-                for (int i = 1; i <= (int)modelOptions["smr" + subnetwork_name + "_link_count"]; ++i)
+                for (int i = 1; i <= getIntOpt(subnetwork_name, "link_count"); ++i)
                 {
                     //will be observed
                     Y_before[i] = Variable.New<int>();// Variable<int>.Discrete(); //Variable.Discrete<int>.Named(subnetwork_name + "Y_before" + (i + 1).ToString()); //observed
@@ -236,17 +264,18 @@ namespace server_predictor_tests
             //==========Calculate pairwise factors and represent in Infer.NET structure =====================//
             try
             {
-                for (int i = 1; i <= (int)modelOptions["smr" + subnetwork_name + "_link_count"]; ++i)
+                /*
+                for (int i = 1; i <= getIntOpt(subnetwork_name,"link_count"); ++i)
                 {
                     Console.WriteLine("");
                     //TODO: transport to another module this functionality
-                    double[] neigh = subnetwork_name == "Cars" ? smrCars.getMostImportantNeigh(i) : smrVelocity.getMostImportantNeigh(i);
+                   // double[] neigh = subnetwork_name == "Cars" ? smrCars.getMostImportantNeigh(i) : smrVelocity.getMostImportantNeigh(i);
 
-                    Logger.Instance.log_array(neigh);
+                    //Logger.Instance.log_array(neigh);
 
                     
 
-                    for (int j = 0; j < neigh.Length; ++j)
+                    for (int j = i+1; j <= getIntOpt(subnetwork_name,"link_count"); ++j)
                     {
                         if (i >= neigh[j]) continue;
                         double[] factor = pmrCars.getPairwiseFactor(i, (int)neigh[j], (int)modelOptions[subnetwork_name+"_step"], ((int)modelOptions[subnetwork_name+"_states_count"]));
@@ -279,6 +308,7 @@ namespace server_predictor_tests
                         }
                     }
                 }
+                 */
             }
             catch (Exception e)
             {
@@ -358,6 +388,7 @@ namespace server_predictor_tests
             double max = 0.0;
             int max_id = 0;
 
+
             for (int i = 0; i < getIntOpt("Cars", "states_count"); ++i)
             {
                 if (y_next_test1[i] > max)
@@ -369,20 +400,35 @@ namespace server_predictor_tests
            
 
             Logger.Instance.log_array(carsPriorFactors[1][0]);
-            Console.WriteLine(max_id * getIntOpt("Cars", "step"));
+            Console.WriteLine((double)max_id * getDblOpt("Cars", "step") * (1.0/normalizeFactors[1][0]));
 
             
         }
 
 
+        private double getDblOpt(string subnetwork_name, string option)
+        {
+            double res;
+            try { res = (double)modelOptions["smr" + subnetwork_name + "_" + option]; }
+            catch (Exception e)
+            {
+                try { res = (double)modelOptions[subnetwork_name + "_" + option]; }
+                catch (Exception r)
+                {
+                    Logger.Instance.log_error("not existing option for " + subnetwork_name + " " + option);
+                    throw r; //system will crash anyway
+                }
+            }
+            return res;
 
+        }
         private int getIntOpt(string subnetwork_name, string option)
         {
             int res;
-            try { res = (int)modelOptions["smr" + subnetwork_name + "_" + option]; }
+            try { res = (int)((double)modelOptions["smr" + subnetwork_name + "_" + option]); }
             catch (Exception e)
             {
-                try { res = (int)modelOptions[subnetwork_name + "_" + option]; }
+                try { res = (int)((double)modelOptions[subnetwork_name + "_" + option]); }
                 catch (Exception r)
                 {
                     Logger.Instance.log_error("not existing option for " + subnetwork_name + " " + option);
@@ -394,7 +440,7 @@ namespace server_predictor_tests
         }
         public List<List<double[]>> calculatePriorFactors(string subnetwork_name, double[] X)
         {
-            //X - conformant do model_options[subnetwork_name_link_count] and model_options[subnetwork_name_predict_behind] and
+            Logger.Instance.log("Run prediction");    //X - conformant do model_options[subnetwork_name_link_count] and model_options[subnetwork_name_predict_behind] and
             //model_options[subnetwork_name_ahead]. 1D array
                 //i.e (predict_behind * link_count)+(ahead*link_count) size
             //Format priorFactors[i][j][k] --- priorFactor of i'th link of j'th predicition (+1, +2, +3) of k'th probability discrete (0,1,....,subnetwork_name_states_count)
@@ -409,14 +455,16 @@ namespace server_predictor_tests
             double[] prediction = subnetwork_name == "Cars" ? smrCars.predict(X) : smrVelocity.predict(X);
             Logger.Instance.log_array(prediction);
             Logger.Instance.log_array(X);
-            int step_tmp = getIntOpt(subnetwork_name, "step");
-            int st_count_tmp = getIntOpt(subnetwork_name, "states_count");
-            int max_tmp = getIntOpt(subnetwork_name, "max");
-            int ahead_tmp = getIntOpt(subnetwork_name,"ahead_ret");
+            double step_tmp = getDblOpt(subnetwork_name, "step");
+            double st_count_tmp = getDblOpt(subnetwork_name, "states_count");
+            double max_tmp = getDblOpt(subnetwork_name, "max");
+            int ahead_tmp = getIntOpt(subnetwork_name, "ahead");
+
             //=====Iterate over every link that is measured in the network=========//
             priorFactors.Add(new List<double[]>()); //dummy
             for (int i = 1; i<= getIntOpt(subnetwork_name,"link_count"); ++i)
             {
+                Console.WriteLine(i.ToString());
                 priorFactors.Add( new List<double[]>() );
 
                 //=====Iterate over ahead predictions (+5 min +10min etc, depends on the setup)========//
@@ -430,7 +478,8 @@ namespace server_predictor_tests
                     {
                         //Console.WriteLine(String.Format("{0} {1} {2} prediction = {3} , current = {4}", i, j, k, prediction[j], getIntOpt(subnetwork_name, "step") * k));
                         //TODO: Pick constants and write as options
-                        priorFactors[i][j][k] = 3*Math.Exp(-Math.Abs((Math.Min(prediction[i * ahead_tmp + j], max_tmp) - step_tmp * k)) / 100);
+                        //TODO: Standarize indexing (normalizeFactors starts from 0)
+                        priorFactors[i][j][k] = 3*Math.Exp(-Math.Abs((Math.Min( this.normalizeFactors[1][i-1]*prediction[(i-1) * ahead_tmp + j + 1], max_tmp) - step_tmp * k)));
                         sum += priorFactors[i][j][k];
                     }
                     //normalization

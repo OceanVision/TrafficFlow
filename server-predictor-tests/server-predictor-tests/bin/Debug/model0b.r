@@ -46,7 +46,7 @@ model0b.getDefaultPredictOptions <- function(){
 look_behind = 30,             #number of steps to include into prediction as it is in THE DATA  #quite global 
 look_behind_prediction_self=30,  #number of steps to look behind when considering the link to predict   
 look_behind_prediction = 10,  #-,- other links
-name = "Cars", #algorithm name for naming purposes
+name = "smrCars", #algorithm name for naming purposes
 ahead = 2, #number of steps to predict
 ahead_data = 10, #actual number of steps registered in the file 
 link_count=20, #number of all links int he network to predict for (every link will separately predict for it subset of dependency list)
@@ -282,25 +282,24 @@ model0b.applyModel0b<-function(model0b, test_data, predict_options){
     }
     predicted = predicted * (1.0/model0b$normalize_factor_y)
     ## !!!!!!! REMOVE THIS LINE !!!!!!!!!!!#
-    return(sum(predicted))
+    return(c(predicted))
 }
 
 ### Perform whole (required) prediction ###
 model0b.makePrediction <- function(link_models, x, predict_options){
-   y = matrix(0, ncol = predict_options$link_count, nrow = 1)
+   y = matrix(0, ncol = predict_options$link_count, nrow = predict_options$ahead)
   
-
    depend_list = model0b.getCompleteDependList(predict_options) 
 
-   
-   for(i in 1:predict_options$link_count){
+     for(i in 1:predict_options$link_count){
         indices = c()
         for(j in 1:length(depend_list[[i]])){
-            indices = c(indices, ((depend_list[[i]][j]-1)*predict_options$look_behind+1):(depend_list[[i]][j]*predict_options$look_behind))
+		            indices = c(indices, ((depend_list[[i]][j]-1)*predict_options$look_behind+1):(depend_list[[i]][j]*predict_options$look_behind))
         }
         y[,i] = model0b.applyModel0b(link_models[[i]], as.vector(x[indices]), predict_options) 
    } 
 
+	##note: sligh change - Y1+1 Y1+2 Y2+1 Y2+2 format
    return(y)
 }
 
@@ -382,6 +381,8 @@ model0b.test<-function(){
         y_collected = rbind(y_collected, model0b.makePrediction(model0b.model, data_transform$samples[i,], predict_options))
     }
     
+    print(y_collected)
+
     load("data/model0b.link.general.data.RDa")
     
 

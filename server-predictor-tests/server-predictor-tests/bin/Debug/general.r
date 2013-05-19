@@ -161,6 +161,8 @@ model0b.getDependList<-function(i, predict_options){
 
 model0b.prepareDependList<-function(file_name = "data/traffic_test.txt", predict_options){
     ###1. Read 100 lines and feed into get_corr_list
+	print("Prepare depend list")
+	print(file_name)
     data.sample = read.clump(file_name, 100, 1)
     depend_list = general.get_depend_list(data.sample)
     save(depend_list, file = paste("data/model0b.",predict_options$name,".depend_list.RDa",sep=""))

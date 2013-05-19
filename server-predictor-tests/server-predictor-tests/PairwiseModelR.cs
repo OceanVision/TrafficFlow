@@ -49,8 +49,10 @@ namespace server_predictor_tests
                     Logger.Instance.log("Error initializing R.NET engine");
                     throw (e);
                 }
+                Logger.Instance.log("Correctly initialized R.NET engine");
             }
-            Logger.Instance.log("Correctly initialized R.NET engine");
+            engine.Evaluate("source('general.r')");
+
         }
         ArrayList pairwiseFactors;
         private string p;
@@ -63,8 +65,6 @@ namespace server_predictor_tests
             catch (Exception e)
             {
             }
-            
-   
         }
 
 
