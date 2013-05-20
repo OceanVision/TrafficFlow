@@ -56,33 +56,68 @@ namespace server_predictor_tests
         }
         ArrayList pairwiseFactors;
         private string p;
-        public void initPairwiseCalculation(string data_file_name)
+        public void initPairwiseCalculation(string data_file_name, int link_count, int data_sample_file_lines, double step_size)
         {
             //invoke R-script to load train data sample
             try
             {
+                engine.Evaluate("general.initPairwiseCalculation(data_sample_file=\"" + data_file_name + "\", link_count = " +
+                            link_count.ToString() + ",data_sample_file_lines = " + 
+                               data_sample_file_lines.ToString() + ", step_size = " + step_size.ToString(System.Globalization.CultureInfo.InvariantCulture) + ")");
             }
             catch (Exception e)
             {
+                Logger.Instance.log_error(e.ToString());
+                throw(e);
             }
         }
 
-
-        public double[] getPairwiseFactor(int i, int j, int step, int steps)
+        public double[] getPairwiseFactorList(int link_count, double step)
         {
-            //invoke R-script to calculate pairwise factor for indices (i,j)
+            NumericVector Y;
             try
             {
+                Y = engine.Evaluate("general.getDifferencePariwiseFactorList(" +
+       
+                     link_count.ToString() + "," +
+                     step.ToString(System.Globalization.CultureInfo.InvariantCulture) + ")").AsNumeric();
+                double[] Y_output = new double[Y.Length];
+                Y.AsNumeric().CopyTo(Y_output, Y.Length, 0, 0);
+                return Y_output;
             }
             catch (Exception e)
             {
+                Logger.Instance.log_error("Error while getting pairwise factor list " + e.ToString());
+                throw (e);
             }
 
-            //TODO: fill
+        }
+        public double[] getPairwiseFactor(int i, int j, int link_count, double step)
+        {
+            //invoke R-script to calculate pairwise factor for indices (i,j)
+            NumericVector Y;
+            try
+            {
+               Y = engine.Evaluate("general.getDifferencePairwiseFactor(" +
+                    i.ToString() + "," +
+                    j.ToString() + "," + 
+                    link_count.ToString() + "," + 
+                    step.ToString(System.Globalization.CultureInfo.InvariantCulture) + ")").AsNumeric();
+                double[] Y_output = new double[Y.Length];
+                Y.AsNumeric().CopyTo(Y_output, Y.Length, 0, 0);
+                return Y_output;
+            }
+            catch (Exception e)
+            {
+                Logger.Instance.log_warning("Error while getting pairwise factor " + e.ToString());
+            }
+
+            int steps = 10;
+
             double[] factor = new double[steps * steps];
             for (int h = 0; h < steps; ++h) for (int k = 0; k < steps; ++k)
             {
-                factor[h * steps + k] = 2.0;///(double)(steps*steps);
+                factor[h * steps + k] = 0.5;
             }
             return factor;
         }

@@ -35,7 +35,7 @@ namespace server_predictor_tests
         }
         public void log_array<T>(T[] array){
             this.log("(", false);
-            foreach (var t in array) Console.Write(t + ",");
+            foreach (var t in array) Console.Write(t + " , ");
             Console.Write(")\n");
         }
 

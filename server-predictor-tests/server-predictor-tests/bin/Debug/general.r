@@ -60,8 +60,9 @@ model0b.prepareSampleObservationalData<- function(files_names, sample_size, link
 ######## NOTE: THOSE FUNCTIONS ARE ALWAYS CALLED IN A BLOCK AND THIS IS WHY I RM IN THE FISHINPAIRWISECALCULATION #######3
 ## do calculation and load into global memory neede sample ##
 ## NOTE: ASSUMES THAT DATA IS NORMALIZED 0---1 !! VERY IMPORTANT
-general.initPairwiseCalculation<- function(data_sample_file = "data/traffic_test.txt", link_count, data_sample_file_lines = 60000, step_size = 0.1){
-    ## Get representative sample of the data
+general.initPairwiseCalculation<- function(data_sample_file = "data/traffic_test.txt", link_count, data_sample_file_lines = 60000, step_size = 0.1, howmany = 10){
+	   
+ ## Get representative sample of the data
     data.sample = as.matrix(read.csv(file = data_sample_file, header = F, sep = " "))
     print(dim(data.sample))
     # for(i in 1:as.integer(data_sample_file_lines/100)){ 
@@ -77,7 +78,7 @@ general.initPairwiseCalculation<- function(data_sample_file = "data/traffic_test
     }
 
     ### Save most correlated ###
-    assign("global_pairwise_pick", order(c(abs(pairwise)), decreasing = T)[1:80], env = globalenv())
+    assign("global_pairwise_pick", order(c(abs(pairwise)), decreasing = T)[1:howmany], env = globalenv())
 
     print(global_pairwise_pick)
 
@@ -87,16 +88,11 @@ general.initPairwiseCalculation<- function(data_sample_file = "data/traffic_test
     ## Simply by iterating through all samples ##
     step_count = 1.0/step_size
     for(i in 1:length(global_pairwise_pick)){
-
-        print(paste("Calculating difference pairwise factor #",i,sep=""))
-        
         b = as.integer((global_pairwise_pick[i]-1) / link_count) +1 # column 
 
         a = global_pairwise_pick[i] -  (b-1)*link_count # row
 
 
-        print(global_pairwise_pick[i])
-        print(paste(a," conv ",b))
 
         if(b > a){
             tmp = a
@@ -111,32 +107,37 @@ general.initPairwiseCalculation<- function(data_sample_file = "data/traffic_test
         dif_step = abs(step_a - step_b)
         for(h in 1:length(dif_step))
         {
-            if(step_a[h] > 4 | step_b[h] > 4)
             dif_factor[dif_step[h]] = dif_factor[dif_step[h]] + 1
         }
-        print(dif_factor)
-
         dif_factors[[global_pairwise_pick[i]]] = dif_factor
 
     }   
     dif_factors[[link_count*link_count]] = NA 
-
+    assign("global_how_many", howmany, env = globalenv())
     assign("global_dif_factors", dif_factors, env = globalenv())
     assign("global_pairwise", pairwise, env =  globalenv())
 
 }
 
+general.getDifferencePariwiseFactorList <- function(link_count, step_size){
+	lista = c()
+	for(i in 1:global_how_many){
+        b = as.integer((global_pairwise_pick[i]-1) / link_count) +1 # column 
+        a = global_pairwise_pick[i] -  (b-1)*link_count # row
+	  lista = c(lista, a, b)
+	}
+	return(lista)
+}
 ## retrieve from global memory ##
 ## returns c(-1,.....) if not calculated in initPairwiseCalculation
 general.getDifferencePairwiseFactor<-function(i,j, link_count, step_size){
     index = (j-1)*link_count + i
     states_count = as.integer(1.0/step_size) 
-    if(is.numeric(global_dif_factors[[index]])== T){ #was it picked in general.initPairwiseCalculation() ?
-         print(index)
-         return(global_dif_factors[[index]])
+    if(is.numeric(global_dif_factors[[index]])== T & global_pairwise[i,j]>0){ #was it picked in general.initPairwiseCalculation() ?
+         return(c(global_pairwise[i,j],global_dif_factors[[index]]))
     }
     else{
-        return(rep(1.0, states_count))
+        return(rep(-99.0, states_count))
     }
 }
 
