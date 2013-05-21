@@ -8,9 +8,9 @@ namespace Graph
 {
     public class MyNode
     {
-        private int id { get; set; }
-        private double latitude { get; set; }
-        private double longitude { get; set; }
+        public int id { get; set; }
+        public double latitude { get; set; }
+        public double longitude { get; set; }
         public string openid { get; set; }
 
         public MyNode(int new_id)
