@@ -1,0 +1,185 @@
+        public void rebuildAvgVelocity(String toRebuild, String outPath)
+        {
+            string line;                        // one line of rebuild file
+            string[] elements;                  // elements of that line
+            int actualIndex = 1;                // index of actual link from file           
+            int actualTime = 60;                // time of actualIndex
+            double congestion = 0;              // summary congestion at link
+            double velocity = 0;                // summary velocity at link
+            double weight = 0;                  // weight(sum of distances) of edges from link
+
+            // creating out files
+            if (File.Exists(outPath))
+            {
+                File.Delete(outPath);
+            }
+            FileStream tmp1 = File.Create(outPath);
+            tmp1.Close();
+
+            FileStream sourceStream = new FileStream(toRebuild, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            StreamReader linksReader = new StreamReader(sourceStream);
+
+            FileStream outStream = new FileStream(outPath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+            StreamWriter linksWriter = new StreamWriter(outStream);
+
+            // first line of description
+            linksReader.ReadLine();
+            linksWriter.WriteLine("Time Name Velocity NrOfCars");
+
+            // read file to it's end
+            while ((line = linksReader.ReadLine()) != null)
+            {
+                elements = line.Split(' ');
+
+                // if we are on the next link
+                if (Int32.Parse(elements[1]) != actualIndex)
+                {
+                    linksWriter.WriteLine(actualTime + " " + actualIndex + " " + Math.Round(velocity / weight, 3) + " " +
+                        Math.Round(congestion / weight, 3));
+
+                    congestion = velocity = weight = 0;
+
+                    actualIndex = Int32.Parse(elements[1]);
+                    actualTime = Int32.Parse(elements[0]);
+                }
+
+                // searching edge from file in the graph
+                foreach (MyEdge e in graph.OutEdges(graph.Vertices.ElementAt(idDictionary[elements[2]])))
+                {
+                    if (e.endNode.openid == elements[3])
+                    {
+                        // update parameters
+                        congestion += e.distance * Double.Parse(elements[5]);
+                        velocity += e.distance * Double.Parse(elements[4]);
+                        weight += e.distance;
+                        break;
+                    }
+                }
+            } // end while
+
+            // last link
+            linksWriter.WriteLine(actualTime + " " + actualIndex + " " + Math.Round(velocity / weight, 3) + " " +
+                Math.Round(congestion / weight, 3));
+
+            linksReader.Close();
+            sourceStream.Close();
+
+            linksWriter.Close();
+            outStream.Close();
+        } // end function
+
+        public void rebuildCongestion(String toRebuild, String outPath)
+        {
+            string line;            // one line of rebuild file
+            string[] elements;      // elements of that line
+            int actualIndex = 1;    // index of actual link from file           
+            int actualTime = 1;     // time of actualIndex
+            double congestion = 0;  // summary congestion at link
+            double weight = 0;      // weight(sum of distances) of edges from link
+
+            // creating out file
+            if (File.Exists(outPath))
+            {
+                File.Delete(outPath);
+            }
+            FileStream tmp = File.Create(outPath);
+            tmp.Close();
+
+            FileStream sourceStream = new FileStream(toRebuild, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            StreamReader linksReader = new StreamReader(sourceStream);
+
+            FileStream outStream = new FileStream(outPath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+            StreamWriter linksWriter = new StreamWriter(outStream);
+
+            // first line of description
+            linksReader.ReadLine();
+            linksWriter.WriteLine("Time(minutes) Name NrOfCars");
+
+            // read file to it's end
+            while ((line = linksReader.ReadLine()) != null)
+            {
+                elements = line.Split(' ');
+
+                // if we are on the next link
+                if (Int32.Parse(elements[1]) != actualIndex)
+                {
+                    linksWriter.WriteLine(actualTime + " " + actualIndex + " " + Math.Round(congestion / weight, 3));
+                    congestion = weight = 0;
+
+                    actualIndex = Int32.Parse(elements[1]);
+                    actualTime = Int32.Parse(elements[0]);
+                }
+
+                // searching edge from file in the graph
+                foreach (MyEdge e in graph.OutEdges(graph.Vertices.ElementAt(idDictionary[elements[2]])))
+                {
+                    if (e.endNode.openid == elements[3])
+                    {
+                        // update parameters
+                        congestion += e.distance * Double.Parse(elements[4]);
+                        weight += e.distance;
+                        break;
+                    }
+                }
+            } // end while
+
+            // last link
+            linksWriter.WriteLine(actualTime + " " + actualIndex + " " + Math.Round(congestion / weight, 3));
+
+            linksReader.Close();
+            sourceStream.Close();
+
+            linksWriter.Close();
+            outStream.Close();
+        } // end function
+
+        public void matrixData(string dataPath, string outPath)
+        {
+            string line;            // one line of rebuild file
+            string[] elements;      // elements of that line         
+            int actualTime;         // time of actualIndex
+
+            // creating out file
+            if (File.Exists(outPath))
+            {
+                File.Delete(outPath);
+            }
+            FileStream tmp = File.Create(outPath);
+            tmp.Close();
+
+            FileStream sourceStream = new FileStream(dataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            StreamReader dataReader = new StreamReader(sourceStream);
+
+            FileStream outStream = new FileStream(outPath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
+            StreamWriter matrixWriter = new StreamWriter(outStream);
+
+            // first line of description
+            dataReader.ReadLine();
+
+            line = dataReader.ReadLine();
+            elements = line.Split(' ');
+            actualTime = Int32.Parse(elements[0]);
+
+            // read file to it's end
+            do
+            {
+                elements = line.Split(' ');
+
+                // if we are on the next time mark
+                if (Int32.Parse(elements[0]) != actualTime)
+                {
+                    matrixWriter.WriteLine();
+                    actualTime = Int32.Parse(elements[0]);
+                }
+
+                // write value
+                matrixWriter.Write(elements[2] + " ");
+
+            } while ((line = dataReader.ReadLine()) != null);
+
+            dataReader.Close();
+            sourceStream.Close();
+
+            matrixWriter.Close();
+            outStream.Close();
+        }
