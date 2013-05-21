@@ -1,11 +1,11 @@
-
+source("general.r")
 ### Constant section ###
 TRAINDATA_CYCLE = 600 # minutes in one cycle
 TRAINDATA_COUNT = 100 # no of simulation cycles
 TRAINDATA_SLOTSIZE = 30 # no of minute to take into account. NOTICE TRAINDATA CYCLE HAS TO BE 0 MOD TRAINDATA_SLOTSIZE
 TRAINDATA_PREDICTSIZE = 10#  no of minutes to predict
 TRAINDATA_INCREMENT = 30 # overlapping controlling
-TRAINDATA_LINK_COUNT = 20 # number of observed links
+TRAINDATA_LINK_COUNT = 20 #number of links to predict for
 ### End of constant section ###
 
 
@@ -32,10 +32,13 @@ util.load_train_samples <- function(file_name = "data/traffic_training.txt", inc
     return(list(samples = train$samples))
 }
 
-util.load_train <- function(file_name = "data/traffic_training.txt", increment = -1){
+util.load_train <- function(file_name = "data/traffic_training.txt", increment = -1, predict_for = -1){
     if(increment == -1) increment = TRAINDATA_INCREMENT
     ### Read raw data ### 
     train.raw = read.csv(file=file_name,head=F,sep=" ")
+
+
+    if(predict_for == -1) predict_for = dim(train.raw)[2]
 
     plot(1:100,as.vector(train.raw[1:100,1]),"l")
 
@@ -53,7 +56,7 @@ util.load_train <- function(file_name = "data/traffic_training.txt", increment =
     while(1){
 
         sample_count = sample_count + 1
-        train.samples[[sample_count]] = list(x = train.raw[at:(at+TRAINDATA_SLOTSIZE-1),], y = train.raw[(at+TRAINDATA_SLOTSIZE):(at+TRAINDATA_SLOTSIZE+TRAINDATA_PREDICTSIZE-1),])
+        train.samples[[sample_count]] = list(x = as.matrix(train.raw[at:(at+TRAINDATA_SLOTSIZE-1),]), y = as.matrix(train.raw[(at+TRAINDATA_SLOTSIZE):(at+TRAINDATA_SLOTSIZE+TRAINDATA_PREDICTSIZE-1),1:predict_for]))
         at_cycle = at %% TRAINDATA_CYCLE
 
         
@@ -69,15 +72,15 @@ util.load_train <- function(file_name = "data/traffic_training.txt", increment =
     }
 
 
-    return(list(raw = train.raw, cycles = train.cycles, samples = train.samples, isTrain = T))
+    return(list(samples = train.samples, isTrain = T))
 }
 
 ## evaluate solution stored in matrix ###
-util.evaluate.matrix <- function(test_matrix, target_file = "solutions/test_priv.txt"){
+util.evaluate.matrix <- function(test_matrix, target_file = "solutions/test_priv.txt", predict_options){
     require("hydroGOF")
     library("hydroGOF") ## rmse implementation ##
     sol = read.csv(file = target_file,head=F,sep=" ")
-	print(dim(sol))
+	print(dim(sol))    
 	
     return(rmse(as.vector(as.matrix(sol)),as.vector(as.matrix(test_matrix))))
 }

@@ -57,6 +57,7 @@ source("graph_helper.r")
 model0b.getDefaultPredictOptions <- function(){
     #Note: specifies data format, each node can do the way it wants
     return(list(look_behind = 30, 
+alg_name = "cars", #for global files like model0b.cars.depend
 look_behind_prediction_self=30, 
 look_behind_prediction = 10, 
 ahead = 2,

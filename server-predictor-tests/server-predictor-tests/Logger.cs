@@ -33,9 +33,20 @@ namespace server_predictor_tests
         {
             this.log("WARNING:" + message);
         }
+        public void log_2darray<T>(T[,] arr)
+        {
+            var rowCount = arr.GetLength(0);
+            var colCount = arr.GetLength(1);
+            for (int row = 0; row < rowCount; row++)
+            {
+                for (int col = 0; col < colCount; col++)
+                    Console.Write(String.Format("{0}\t", arr[row, col]));
+                Console.WriteLine();
+            } 
+        }
         public void log_array<T>(T[] array){
             this.log("(", false);
-            foreach (var t in array) Console.Write(t + ",");
+            foreach (var t in array) Console.Write(t + " , ");
             Console.Write(")\n");
         }
 
