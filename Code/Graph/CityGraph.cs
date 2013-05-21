@@ -13,7 +13,9 @@ using PredictionServer;
 namespace Graph
 {
     /// <summary>
-    /// 
+    /// Class which contains grah of the city and all functions
+    /// needed to get data from AI, give this data in a useful format,
+    /// find shortest path between any number of points
     /// </summary>
     public class CityGraph
     {
@@ -174,11 +176,12 @@ namespace Graph
         public void createLinksDictionary(String sourcePath)
         {
             List<int> links = new List<int>();  // list of nodes from one link
-
             string line;                        // one line of rebuild file
             string[] elements;                  // elements of that line
-            int actualIndex = 1;                // index of actual link from file           
-            int actualTime = 1;                 // time of actualIndex
+            int actualIndex;                    // index of actual link from file           
+            int actualTime;                     // time of actualIndex
+            int index;                          // adding links to dictionary with this index
+
             try
             {
                 FileStream sourceStream = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -187,8 +190,15 @@ namespace Graph
                 // first line of description
                 linksReader.ReadLine();
 
+                line = linksReader.ReadLine();
+                elements = line.Split(' ');
+                actualIndex = Int32.Parse(elements[1]);
+                actualTime = Int32.Parse(elements[0]);
+                links.Add(Int32.Parse(elements[2]));
+                index = 0;
+
                 // read file to it's end
-                while ((line = linksReader.ReadLine()) != null)
+                do
                 {
                     elements = line.Split(' ');
 
@@ -196,11 +206,11 @@ namespace Graph
                     if (Int32.Parse(elements[1]) != actualIndex)
                     {
                         // add link to dictionary
-                        linksDictionary.Add(actualIndex, links);
+                        linksDictionary.Add(index++, new List<int>(links));
 
                         // if we have added all links
                         if (actualTime != Int32.Parse(elements[0]))
-                            break; ;
+                            break;
 
                         // clear list
                         links.Clear();
@@ -212,17 +222,9 @@ namespace Graph
                         actualTime = Int32.Parse(elements[0]);
                     }
 
-                    // searching edge from file in the graph
-                    foreach (MyEdge e in graph.OutEdges(graph.Vertices.ElementAt(idDictionary[elements[2]])))
-                    {
-                        if (e.endNode.openid == elements[3])
-                        {
-                            // add new node to our list
-                            links.Add(Int32.Parse(elements[3]));
-                            break;
-                        }
-                    }
-                } // end while
+                    links.Add(Int32.Parse(elements[3]));
+
+                } while ((line = linksReader.ReadLine()) != null);
 
                 // last link
                 if (line == null)
@@ -317,15 +319,17 @@ namespace Graph
             double value;
             // actual time of simulation
             int time;
+            // double array of predictions
+            double[,] prediction;
 
             try
             {
                 // get predictions from AI
-                double[,] prediction = ServerCore.Instance.fetchPrediction();
+                prediction = ServerCore.Instance.fetchPrediction();
                 time = ServerCore.Instance.fetchCurrentTimeStamp();
 
                 // for every link in simulation data
-                for (int i = 0; i < simulationData[time].Length; i++)
+                for (int i = 0; i < simulationData[(time + 5) / 10].Length; i++)
                 {
                     // base value from simulation data
                     value = simulationData[(time + 5) / 10][i];
@@ -344,7 +348,7 @@ namespace Graph
                     for (int j = 0; j < linksDictionary[i].Count - 1; j++)
                     {
                         foreach (MyEdge e in graph.OutEdges(
-                            graph.Vertices.ElementAt (idDictionary [linksDictionary [i].ElementAt (j).ToString ()] ) ) )
+                            graph.Vertices.ElementAt(idDictionary[linksDictionary[i].ElementAt(j).ToString()])))
                         {
                             if (e.endNode.GetHashCode() == idDictionary[linksDictionary[i].ElementAt(j + 1).ToString()])
                             {
@@ -383,6 +387,8 @@ namespace Graph
             if (checkPoints.Length < 2)
                 return (new LinkedList<MyEdge>());
 
+            double manhattanCost;                          // cost of the path based on longitude and latitude of nodes
+            SortedList<double, int[]> bestPermutations;    // Priority list of best permutations based on manhattan cost
             double minPathLength = Double.MaxValue;        // length of the best path
             double actualPathLength = 0;                   // length of present path
             List<MyEdge> minPath = new List<MyEdge>();     // the best path
@@ -394,19 +400,51 @@ namespace Graph
                 int[] insidePoints = new int[checkPoints.Length - 2];
                 Array.Copy(checkPoints, 1, insidePoints, 0, checkPoints.Length - 2);
 
-                // getting all possible permutations and finding which is the best
-                int[][] permutations = getPermutations(insidePoints);
+                // getting all possible permutations
+                int[][] permutationsTmp = getPermutations(insidePoints);
+
+                //initialize permutations[][]
+                int[][] permutations = new int[permutationsTmp.Length][];
+                for(int i = 0; i < permutations.Length; i++)
+                    permutations[i] = new int[checkPoints.Length];
+
+                // merge permutations with first and last checkpoints
+                for (int i = 0; i < permutationsTmp.Length; i++)
+                {
+                    Array.Copy(permutationsTmp[i], 0, permutations[i], 1, permutationsTmp[i].Length);
+                    permutations[i][0] = checkPoints[0];
+                    permutations[i][checkPoints.Length - 1] = checkPoints[checkPoints.Length - 1];
+                }
+
+                // fill in best permutations with manhattan costs
+                manhattanCost = 0;
+                bestPermutations = new SortedList<double, int[]>();
                 foreach (int[] perm in permutations)
                 {
+                    for (int i = 0; i < perm.Length - 1; i++)
+                    {
+                        manhattanCost += Math.Sqrt(Math.Pow(graph.Vertices.ElementAt(perm[i]).longitude - graph.Vertices.ElementAt(perm[i + 1]).longitude, 2)
+                                        + Math.Pow(graph.Vertices.ElementAt(perm[i]).latitude - graph.Vertices.ElementAt(perm[i + 1]).latitude, 2));
+                    }
+
+                    bestPermutations.Add(manhattanCost, perm);
+
+                    manhattanCost = 0;
+                }
+
+                // for 10 paths with best manhattan cost evaluate shortest path
+                for (int j = 0; (j < 10) && (j < bestPermutations.Count); j++)
+                {
+                    int[] actualPerm = bestPermutations.ElementAt(j).Value;
+
                     actualPath.Clear();
                     actualPathLength = 0;
                     // for each 2 points in present permutation, find shortest path
-                    Array.Copy(perm, 0, checkPoints, 1, perm.Length);
-                    for (int i = 0; i < checkPoints.Length - 1; i++)
+                    for (int i = 0; i < actualPerm.Length - 1; i++)
                     {
                         // new part of path
-                        MyEdge[] pathPart = shortestPathBetween(graph.Vertices.ElementAt(checkPoints[i]),
-                                            graph.Vertices.ElementAt(checkPoints[i + 1]),
+                        MyEdge[] pathPart = shortestPathBetween(graph.Vertices.ElementAt(actualPerm[i]),
+                                            graph.Vertices.ElementAt(actualPerm[i + 1]),
                                             weightsWithPredictions);
 
                         // add new part to existing path
@@ -534,192 +572,6 @@ namespace Graph
                 Logger.Instance.log(e.ToString());
                 throw (e);
             }
-        }
-
-        public void rebuildAvgVelocity(String toRebuild, String outPath)
-        {
-            string line;                        // one line of rebuild file
-            string[] elements;                  // elements of that line
-            int actualIndex = 1;                // index of actual link from file           
-            int actualTime = 60;                // time of actualIndex
-            double congestion = 0;              // summary congestion at link
-            double velocity = 0;                // summary velocity at link
-            double weight = 0;                  // weight(sum of distances) of edges from link
-
-            // creating out files
-            if (File.Exists(outPath))
-            {
-                File.Delete(outPath);
-            }
-            FileStream tmp1 = File.Create(outPath);
-            tmp1.Close();
-
-            FileStream sourceStream = new FileStream(toRebuild, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            StreamReader linksReader = new StreamReader(sourceStream);
-
-            FileStream outStream = new FileStream(outPath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
-            StreamWriter linksWriter = new StreamWriter(outStream);
-
-            // first line of description
-            linksReader.ReadLine();
-            linksWriter.WriteLine("Time Name Velocity NrOfCars");
-
-            // read file to it's end
-            while ((line = linksReader.ReadLine()) != null)
-            {
-                elements = line.Split(' ');
-
-                // if we are on the next link
-                if (Int32.Parse(elements[1]) != actualIndex)
-                {
-                    linksWriter.WriteLine(actualTime + " " + actualIndex + " " + Math.Round(velocity / weight, 3) + " " +
-                        Math.Round(congestion / weight, 3));
-
-                    congestion = velocity = weight = 0;
-
-                    actualIndex = Int32.Parse(elements[1]);
-                    actualTime = Int32.Parse(elements[0]);
-                }
-
-                // searching edge from file in the graph
-                foreach (MyEdge e in graph.OutEdges(graph.Vertices.ElementAt(idDictionary[elements[2]])))
-                {
-                    if (e.endNode.openid == elements[3])
-                    {
-                        // update parameters
-                        congestion += e.distance * Double.Parse(elements[5]);
-                        velocity += e.distance * Double.Parse(elements[4]);
-                        weight += e.distance;
-                        break;
-                    }
-                }
-            } // end while
-
-            // last link
-            linksWriter.WriteLine(actualTime + " " + actualIndex + " " + Math.Round(velocity / weight, 3) + " " +
-                Math.Round(congestion / weight, 3));
-
-            linksReader.Close();
-            sourceStream.Close();
-
-            linksWriter.Close();
-            outStream.Close();
-        } // end function
-
-        public void rebuildCongestion(String toRebuild, String outPath)
-        {
-            string line;            // one line of rebuild file
-            string[] elements;      // elements of that line
-            int actualIndex = 1;    // index of actual link from file           
-            int actualTime = 1;     // time of actualIndex
-            double congestion = 0;  // summary congestion at link
-            double weight = 0;      // weight(sum of distances) of edges from link
-
-            // creating out file
-            if (File.Exists(outPath))
-            {
-                File.Delete(outPath);
-            }
-            FileStream tmp = File.Create(outPath);
-            tmp.Close();
-
-            FileStream sourceStream = new FileStream(toRebuild, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            StreamReader linksReader = new StreamReader(sourceStream);
-
-            FileStream outStream = new FileStream(outPath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
-            StreamWriter linksWriter = new StreamWriter(outStream);
-
-            // first line of description
-            linksReader.ReadLine();
-            linksWriter.WriteLine("Time(minutes) Name NrOfCars");
-
-            // read file to it's end
-            while ((line = linksReader.ReadLine()) != null)
-            {
-                elements = line.Split(' ');
-
-                // if we are on the next link
-                if (Int32.Parse(elements[1]) != actualIndex)
-                {
-                    linksWriter.WriteLine(actualTime + " " + actualIndex + " " + Math.Round(congestion / weight, 3));
-                    congestion = weight = 0;
-
-                    actualIndex = Int32.Parse(elements[1]);
-                    actualTime = Int32.Parse(elements[0]);
-                }
-
-                // searching edge from file in the graph
-                foreach (MyEdge e in graph.OutEdges(graph.Vertices.ElementAt(idDictionary[elements[2]])))
-                {
-                    if (e.endNode.openid == elements[3])
-                    {
-                        // update parameters
-                        congestion += e.distance * Double.Parse(elements[4]);
-                        weight += e.distance;
-                        break;
-                    }
-                }
-            } // end while
-
-            // last link
-            linksWriter.WriteLine(actualTime + " " + actualIndex + " " + Math.Round(congestion / weight, 3));
-
-            linksReader.Close();
-            sourceStream.Close();
-
-            linksWriter.Close();
-            outStream.Close();
-        } // end function
-
-        public void matrixData(string dataPath, string outPath)
-        {
-            string line;            // one line of rebuild file
-            string[] elements;      // elements of that line         
-            int actualTime;         // time of actualIndex
-
-            // creating out file
-            if (File.Exists(outPath))
-            {
-                File.Delete(outPath);
-            }
-            FileStream tmp = File.Create(outPath);
-            tmp.Close();
-
-            FileStream sourceStream = new FileStream(dataPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            StreamReader dataReader = new StreamReader(sourceStream);
-
-            FileStream outStream = new FileStream(outPath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
-            StreamWriter matrixWriter = new StreamWriter(outStream);
-
-            // first line of description
-            dataReader.ReadLine();
-
-            line = dataReader.ReadLine();
-            elements = line.Split(' ');
-            actualTime = Int32.Parse(elements[0]);
-
-            // read file to it's end
-            do
-            {
-                elements = line.Split(' ');
-
-                // if we are on the next time mark
-                if (Int32.Parse(elements[0]) != actualTime)
-                {
-                    matrixWriter.WriteLine();
-                    actualTime = Int32.Parse(elements[0]);
-                }
-
-                // write value
-                matrixWriter.Write(elements[2] + " ");
-
-            } while ((line = dataReader.ReadLine()) != null);
-
-            dataReader.Close();
-            sourceStream.Close();
-
-            matrixWriter.Close();
-            outStream.Close();
         }
 
     } // end class
