@@ -23,7 +23,7 @@ namespace Graph
         Dictionary<int, List<int>> linksDictionary = new Dictionary<int, List<int>>();
 
         public CityGraph(String graphPath, String linksPath)
-        {
+        {  
             createGraphFromXML(graphPath);
             createLinksDictionary(linksPath);
         }
@@ -182,12 +182,138 @@ namespace Graph
             sourceStream.Close();
         } // end function
 
+        // TUTAJ DODAC DANE OD STASZKA!!!
+        private void getEdgeValues(Dictionary<MyEdge, double> values)
+        {
+            foreach (MyEdge edge in graph.Edges)
+                values.Add(edge, edge.distance);
+        }
+
+        // shortest path for n points
+        public MyEdge[] shortestPath(int[] checkPoints)
+        {
+            // to less points to find path, return empty list
+            if (checkPoints.Length < 2)
+                return (new List<MyEdge>().ToArray());
+
+            double minPathLength = Double.MaxValue;        // length of the best path
+            double actualPathLength = 0;                   // length of present path
+            List<MyEdge> minPath = new List<MyEdge>();     // the best path
+            List<MyEdge> actualPath = new List<MyEdge>();  // present path
+            
+            // used in shortest path algorithm, data from AI is kept in this dictionary
+            Dictionary<MyEdge, double> edgeValues = new Dictionary<MyEdge, double>();
+            getEdgeValues(edgeValues);
+
+            // checkpoints without first and last (start and target are constant)
+            int[] insidePoints = new int[checkPoints.Length - 2];
+            Array.Copy(checkPoints, 1, insidePoints, 0, checkPoints.Length - 2);
+
+            // getting all possible permutations and finding which is the best
+            int[][] permutations = getPermutations(insidePoints);
+            foreach (int[] perm in permutations)
+            {
+                actualPath.Clear();
+                actualPathLength = 0;
+                // for each 2 points in present permutation, find shortest path
+                Array.Copy(perm, 0, checkPoints, 1, perm.Length);
+                for (int i = 0; i < checkPoints.Length - 1; i++)
+                {
+                    // new part of path
+                    MyEdge[] pathPart = shortestPathBetween(graph.Vertices.ElementAt(checkPoints[i]),
+                                        graph.Vertices.ElementAt(checkPoints[i + 1]),
+                                        edgeValues);
+                    
+                    // add new part to existing path
+                    foreach (MyEdge e in pathPart)
+                    {
+                        actualPath.Add(e);
+                        actualPathLength += edgeValues[e];
+                    }
+                }
+
+                // check if new path is better
+                if (actualPathLength < minPathLength)
+                {
+                    Console.WriteLine("min path length=" + minPathLength);
+                    minPathLength = actualPathLength;
+                    Console.WriteLine("min path length=" + minPathLength);
+                    minPath = new List<MyEdge>(actualPath);
+                }
+            }
+            
+            // return the best path
+            return minPath.ToArray();
+        }
+
+        // get all possible permutations from array
+        private int[][] getPermutations(int[] array)
+        {
+            // get permutations into permList
+            List<List<int>> permList = new List<List<int>>();
+            permRecursion(array.ToList(), new List<int>(), permList);
+
+            // create int[][] from List<List<int>>
+            List<int[]> outList = new List<int[]>();
+            
+            foreach (List<int> list in permList)
+                outList.Add(list.ToArray());
+            
+            return outList.ToArray();
+        }
+
+        // recursion for permutations
+        private void permRecursion(List<int> toAdd, List<int> actualPerm, List<List<int>> permutations)
+        {
+            // if we created permutation
+            if (toAdd.Count() == 0)
+                // add it to the permutations list
+                permutations.Add(actualPerm);
+            else
+            {
+                // new elements of recursion
+                List<int> copyToAdd;
+                List<int> copyActualPerm;
+                
+                // add new element and continue recursion
+                foreach (int v in toAdd)
+                {
+                    copyToAdd = new List<int>(toAdd);
+                    copyActualPerm = new List<int>(actualPerm);
+
+                    copyActualPerm.Add(v);
+                    copyToAdd.Remove(v);
+                    
+                    permRecursion(copyToAdd, copyActualPerm, permutations);
+                }
+            }
+        }
+
+        // shortest path between 2 points
+        private MyEdge[] shortestPathBetween(MyNode source, MyNode target,  Dictionary<MyEdge, double> weights)
+        {
+            Func<MyEdge, double> edgeCost = AlgorithmExtensions.GetIndexer(weights);
+            // compute shortest paths
+            TryFunc<MyNode, IEnumerable<MyEdge>> tryGetPaths = graph.ShortestPathsDijkstra(edgeCost, source);
+            
+            // query path for given vertices
+            List<MyEdge> outPath = new List<MyEdge>();
+            IEnumerable<MyEdge> path = null;
+               
+            tryGetPaths(target, out path);
+            
+            foreach (var edge in path)
+                outPath.Add(edge);
+            
+            return outPath.ToArray();
+        }   
+
         public void rebuildAvgVelocity(String toRebuild, String outPath)
         {
             string line;                        // one line of rebuild file
             string[] elements;                  // elements of that line
             int actualIndex = 1;                // index of actual link from file           
-            int actualTime = 60;                 // time of actualIndex
+            int actualTime = 60;                // time of actualIndex
             double congestion = 0;              // summary congestion at link
             double velocity = 0;                // summary velocity at link
             double weight = 0;                  // weight(sum of distances) of edges from link
