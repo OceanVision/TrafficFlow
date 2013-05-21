@@ -27,11 +27,13 @@ namespace server_predictor_tests
         static void Main(string[] args)
         {
 
-           Thread th =  PredictionDaemon.Instance.getDaemon();
-           th.Priority = ThreadPriority.Highest;
-           th.Start();
+            //Set server configuration, for demonstration purposes, server will be merged with the client//
+            ServerCore.Instance.serverConfiguration = new ServerConfiguration { simulation_start_minute = 1 };
+            ServerCore.Instance.getDaemon().Start();
 
-
+            Logger.Instance.log("Waiting for data");
+            Logger.Instance.log_2darray(ServerCore.Instance.fetchPrediction());
+            Logger.Instance.log("Data available");
             while (true) ;
         }
     }

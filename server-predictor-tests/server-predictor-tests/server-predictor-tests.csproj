@@ -72,6 +72,7 @@
     <Compile Include="PredictionDaemon.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServerCore.cs" />
     <Compile Include="SingularModelR.cs" />
     <Compile Include="TrafficPredictionModel1.cs" />
   </ItemGroup>

@@ -10,7 +10,9 @@ using System.Collections;
 
 namespace server_predictor_tests
 {
-    //Model for calculating pairwise factors. For now is trivial //
+    ///<summary>
+    ///Model for calculating pairwise factors. For now is trivial
+    ///</summary>
     class PairwiseModelR
     {
         public static REngine engine
@@ -25,8 +27,6 @@ namespace server_predictor_tests
             m_name = name;
             pairwiseFactors = new ArrayList();
         }
-
-        
 
         // data_file_name - train
         public void init()
