@@ -358,7 +358,7 @@ namespace Graph
                             if (e.endNode.GetHashCode() == idDictionary[linksDictionary[i].ElementAt(j + 1).ToString()])
                             {
                                 // value is based on velocity and edge distance
-                                weightsWithPredictions[e] = value / e.distance;
+                                weightsWithPredictions[e] = value * e.distance;
                                 velocities[e] = value;
                                 break;
                             }
