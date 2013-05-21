@@ -35,9 +35,14 @@ namespace Graph
         private Dictionary<int, List<int>> linksDictionary = new Dictionary<int, List<int>>();
 
         /// <summary>
-        /// Dictionary of edges and their weights based on current data and predictions
+        /// Dictionary of edges and their weights based on current data, predictions and length of edge
         /// </summary>
         private Dictionary<MyEdge, double> weightsWithPredictions = new Dictionary<MyEdge, double>();
+
+        /// <summary>
+        /// Dictionary of edges and their velocities based on current data and predictions
+        /// </summary>
+        private Dictionary<MyEdge, double> velocities = new Dictionary<MyEdge, double>();
 
         /// <summary>
         /// Streams to read file with simulation data
@@ -354,6 +359,7 @@ namespace Graph
                             {
                                 // value is based on velocity and edge distance
                                 weightsWithPredictions[e] = value / e.distance;
+                                velocities[e] = value;
                                 break;
                             }
                         }
@@ -368,12 +374,12 @@ namespace Graph
         }
 
         /// <summary>
-        /// Getter for weightsWithPredictions
+        /// Getter for velocities
         /// </summary>
-        /// <returns>edge values</returns>
-        public Dictionary<MyEdge, double> getEdgeValues()
+        /// <returns>edge velocity</returns>
+        public Dictionary<MyEdge, double> getVelocities()
         {
-            return weightsWithPredictions;
+            return velocities;
         }
 
         /// <summary>
