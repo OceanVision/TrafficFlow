@@ -73,7 +73,7 @@ namespace Graph
         /// Creating graph
         /// </summary>
         /// <param name="graphPath">Path of file containing graph</param>
-        public void createGraphFromXML(String graphPath)
+        private void createGraphFromXML(String graphPath)
         {
             int id = 0;
             Dictionary<int, double> latitudeDic = new Dictionary<int, double>();
@@ -178,7 +178,7 @@ namespace Graph
         /// Link is the set of edges on which we got data from TSF
         /// </summary>
         /// <param name="sourcePath">Path of file containing links</param>
-        public void createLinksDictionary(String sourcePath)
+        private void createLinksDictionary(String sourcePath)
         {
             List<int> links = new List<int>();  // list of nodes from one link
             string line;                        // one line of rebuild file
@@ -249,7 +249,8 @@ namespace Graph
         /// Gets data from simulation data file, start simulation 
         /// </summary>
         /// <param name="path">Simulation data file path</param>
-        public void startSimulation(String path)
+        /// <param name="beginningTime">Time on which simulation starts</param>
+        public void startSimulation(String path, int beginningTime)
         {
             // fields used to read simulation data file
             String line;
@@ -308,7 +309,7 @@ namespace Graph
 
                 simulationData = outList.ToArray();
 
-                ServerCore.Instance.serverConfiguration = new ServerConfiguration { simulation_start_minute = 1 };
+                ServerCore.Instance.serverConfiguration = new ServerConfiguration { simulation_start_minute = beginningTime };
                 ServerCore.Instance.getDaemon().Start();
             }
             catch (Exception e)
