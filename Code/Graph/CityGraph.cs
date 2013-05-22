@@ -264,7 +264,10 @@ namespace Graph
             {
                 // default values for edges without predictions
                 foreach (MyEdge e in graph.Edges)
+                {
                     weightsWithPredictions.Add(e, 40);
+                    velocities.Add(e, 40);
+                }
 
                 // simulation data streams
                 FileStream simulationDataStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
