@@ -14,8 +14,8 @@ namespace TrafficFlow
 {
     public class Camera2d
     {
-        private const float zoomUpperLimit = 1.5f;
-        private const float zoomLowerLimit = .5f;
+        private const float zoomUpperLimit = 2.0f;
+        private const float zoomLowerLimit = 0.5f;
 
         private float _zoom;
         private Matrix _transform;

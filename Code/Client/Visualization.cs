@@ -6,14 +6,19 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Graph;
 
 namespace TrafficFlow
 {
     public partial class Visualization : Microsoft.Xna.Framework.Game
     {
-        //grafika
-        private GraphicsDeviceManager Graphics;
-        private SpriteBatch SpriteBatch;
+        //graphics
+        GraphicsDeviceManager Graphics;
+        SpriteBatch SpriteBatch;
+        bool IsProgress;
+        bool RouteMode;
+        bool NetworkLoaded;
+        int ServerStartTime;
 
         public Visualization()
         {
@@ -31,18 +36,29 @@ namespace TrafficFlow
         protected override void Initialize()
         {
             IsMouseVisible = true;
-            //TargetElapsedTime = TimeSpan.FromSeconds(1.0f / 40.0f); //ustawia 60 fps
-            IsFixedTimeStep = false;    //ustawia wywo³anie Update() bez interwa³u (chyba tak?)
+            //TargetElapsedTime = TimeSpan.FromSeconds(1.0f / 60.0f); //set up 60 fps
+            IsFixedTimeStep = false;    //set up executing Update() without interval (right?)
+
+            SelectedPoints = new Dictionary<Vector2, int>();
+            Lines = new LinkedList<Line>();
+            Nodes = new Dictionary<Vector2, int>();
+            Route = new LinkedList<Line>();
+            NotMapAreas = new LinkedList<Rectangle>();
+            LinesLock = new Object();
+            RouteLock = new Object();
+            DataLock = new Object();
+            NetworkLoaded = false;
+
+            IsProgress = false;
+            RouteMode = false;
             
             InitControls();
 
-            //20.9399, 52.24126
             SphericalStart = new Vector2(495900.31940731f, 5787874.09092728f);
             CartesianCoef = new Vector2(5.83817174232375f, 5.869556540361367f);
 
             ZoomState = 1;
             ZoomRange = new Vector2(1, 3);
-            FirstAssetName = 1346;
 
             MapBuffer = 5;
 
@@ -64,11 +80,10 @@ namespace TrafficFlow
         {
             Graphics.GraphicsDevice.PresentationParameters.MultiSampleCount = 6;
             SpriteBatch = new SpriteBatch(Graphics.GraphicsDevice);
-            //CurrentTiles = new LinkedList<LinkedList<Tile>>();
             EmptyTexture = Content.Load<Texture2D>(@"Tiles\empty");
-            Lines = new LinkedList<Line>();
-
-            //³adujê grafiki - oko³o 8MB
+            Font = Content.Load<SpriteFont>("PointsNumbers");
+            
+            //loads graphics - about 8MB
             Tiles = new Texture2D[4][][];
             for(int i = 1; i <= 3; ++i)
             {
@@ -81,31 +96,24 @@ namespace TrafficFlow
                         {
                             Tiles[i][j][k] = Content.Load<Texture2D>(@"Tiles\" + (i + 13) + @"\" + (j + (int)Math.Pow(2, i - 1) * 9145) + @"\" + (k + Math.Pow(2, i - 1) * 5394));
                         }
-                        catch (ContentLoadException e)
+                        catch (Exception e)
                         {
                             Tiles[i][j][k] = EmptyTexture;
                         }
                 }
             }
 
-            //aktualny zakres kafelek
+            //initializes current view
             CurrentView = new View(0, MapBuffer - 1, MapBuffer - 1, 0);
 
-            //³adujê kafelki
-            //LoadTiles();
-
-            //mycha
+            //initializes mouse
             Mouse.SetPosition(0, 0);
-            originalMouseState = new Vector2(Mouse.GetState().X + Camera.Pos.X, Mouse.GetState().Y + Camera.Pos.Y);
+            InitialMousePos = new Vector2(Mouse.GetState().X + Camera.Pos.X, Mouse.GetState().Y + Camera.Pos.Y);
+            CurrentMousePos = new Vector2(InitialMousePos.X, InitialMousePos.Y);
+            InitialMouseState = Mouse.GetState();
 
-            //linie - test
-            //AddLine(new Line(new Vector2(1, 35), new Vector2(177, 64), new Color(100, 100, 100, 255)));
-            //AddLine(new Line(new Vector2(0, 0), new Vector2(XCoef * (20.9618f - 20.9399f), YCoef * (52.2412f - 52.2277f)), new Color(100, 100, 100, 255)));
-            
-            //Message(Lines.Last.Value.End.X + " " + Lines.Last.Value.End.Y);
-            //samochód - test
-            Car1 = new Car(20, ZoomState);
-            //Car1.AddLine(Lines.First.Value);
+            //initializes car
+            Car = new Car();
         }
 
         /// <summary>
@@ -126,18 +134,23 @@ namespace TrafficFlow
         {
             Timer += gameTime.ElapsedGameTime.TotalSeconds;
 
-            CameraUpdate();
-            MouseUpdate();
-            ViewUpdate(); //TODO: Poprawiæ wczytywanie kafelek
+            UpdateControls();
+            UpdateProgress();
 
-            if (Car1.Driving())
-                Car1.Update((float)Timer);
-            //else
-                //Car1.AddLine(Lines.Last.Value);
+            if (!NetworkLoaded)
+            {
+                base.Update(gameTime);
+                return;
+            }
+
+            UpdateCamera();
+            UpdateMouse();
+            UpdateView();
             
-            //Debug.Text = Timer + " " + Car1.Time + " " + Car1.Finished;
+            Car.Update((float)Timer);
             base.Update(gameTime);
         }
+
 
 
         /// <summary>
@@ -146,33 +159,70 @@ namespace TrafficFlow
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            Graphics.GraphicsDevice.Clear(new Color(242, 239, 233));
+            Graphics.GraphicsDevice.Clear(Color.White);
             SpriteBatch.Begin(SpriteSortMode.Deferred, null, null, null, null, null, Camera.GetTransformation());
             /// -------------------------------------
 
-            //odœwie¿enie obszaru kafelek (MapBuffer x MapBuffer)
-            for (int i = CurrentView.Left; i < MapBuffer + CurrentView.Left; ++i)
-                for (int j = CurrentView.Top; j < MapBuffer + CurrentView.Top; ++j)
-                    try
-                    {
-                        SpriteBatch.Draw(Tiles[ZoomState][i][j], new Vector2(i * 256, j * 256), Color.White);
-                    }
-                    catch (IndexOutOfRangeException e)
-                    {
-                        break;
-                    }
-
-            //rysowanie linii
-            foreach (Line line in Lines)
+            //intro screen
+            if (!NetworkLoaded)
             {
-                float coefX = (float)Math.Pow(2, ZoomState - 1) * 0.9969f;
-                float coefY = (float)Math.Pow(2, ZoomState - 1) * 1.0034f;
-                SpriteBatch.DrawLine(new Vector2(coefX * line.Start.X, coefY * line.Start.Y), new Vector2(coefX * line.End.X, coefY * line.End.Y), line.Color, ZoomState);
+                SpriteBatch.Draw(Content.Load<Texture2D>("logo"), new Vector2(Window.ClientBounds.Width / 2 - 206, Window.ClientBounds.Height / 2 - 50), Color.White);
+                SpriteBatch.End();
+                base.Draw(gameTime);
+                return;
             }
             
-            //samochód - test
-            SpriteBatch.DrawCircle(Car1.Pos * ZoomState, 4, 10, new Color(51, 153, 0, 255), 4);
+            //refreshing tiles in current range (MapBuffer x MapBuffer)
+            for (int i = CurrentView.Left; i < 5 * (int)Math.Pow(2, ZoomState - 1) && i < MapBuffer + CurrentView.Left; ++i)
+                for (int j = CurrentView.Top; j < 3 * (int)Math.Pow(2, ZoomState - 1) && j < MapBuffer + CurrentView.Top; ++j)
+                    SpriteBatch.Draw(Tiles[ZoomState][i][j], new Vector2(i * 256, j * 256), Color.White);
 
+            //coefficients
+            float coefX = 0.9969f * (float)Math.Pow(2, ZoomState - 1);
+            float coefY = 1.0034f * (float)Math.Pow(2, ZoomState - 1);
+
+            //drawing lines
+            lock (LinesLock)
+            {
+                foreach (Line line in Lines)
+                    SpriteBatch.DrawLine(new Vector2(coefX * line.Start.X, coefY * line.Start.Y), new Vector2(coefX * line.End.X, coefY * line.End.Y), line.Color, ZoomState + 1);
+            }
+
+            //drawing route
+            lock (RouteLock)
+            {
+                foreach (Line line in Route)
+                    SpriteBatch.DrawLine(new Vector2(coefX * line.Start.X, coefY * line.Start.Y), new Vector2(coefX * line.End.X, coefY * line.End.Y), new Color(80, 80, 80, 190), ZoomState + 3);
+            }
+
+            //drawing points
+            if (SelectedPoints.Count >= 1)
+            {
+                Vector2 pointPos = new Vector2(coefX * SelectedPoints.ElementAt(0).Key.X, coefY * SelectedPoints.ElementAt(0).Key.Y);
+                SpriteBatch.DrawString(Font, "Start", new Vector2(pointPos.X - 18, pointPos.Y - 30), new Color(0, 102, 204, 255));
+                SpriteBatch.DrawCircle(pointPos, 8, 10, new Color(0, 102, 204, 255), 8);
+            }
+            
+            if (SelectedPoints.Count > 1)
+            {
+                Vector2 pointPos;
+                for (int i = 1; i < SelectedPoints.Count - 1; ++i)
+                {
+                    pointPos = new Vector2(coefX * SelectedPoints.ElementAt(i).Key.X, coefY * SelectedPoints.ElementAt(i).Key.Y);
+                    SpriteBatch.DrawCircle(pointPos, 5, 10, new Color(100, 100, 100, 255), 5);
+                }
+
+                pointPos = new Vector2(coefX * SelectedPoints.ElementAt(SelectedPoints.Count - 1).Key.X, coefY * SelectedPoints.ElementAt(SelectedPoints.Count - 1).Key.Y);
+                SpriteBatch.DrawString(Font, "Koniec", new Vector2(pointPos.X - 26, pointPos.Y - 30), new Color(51, 153, 0, 255));
+                SpriteBatch.DrawCircle(pointPos, 8, 10, new Color(51, 153, 0, 255), 8);
+            }
+            
+            //drawing car
+            SpriteBatch.DrawCircle(new Vector2(coefX * Car.Pos.X, coefY * Car.Pos.Y), 4, 10, Color.Red, 4);
+            
+            
+            
+            
             /// -------------------------------------
             SpriteBatch.End();
             base.Draw(gameTime);
