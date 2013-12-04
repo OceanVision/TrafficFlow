@@ -1,0 +1,23 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Maps for Traffic[F]low</title>
+<link type="text/css" rel="stylesheet" href="{% static 'general.css' %}"/>
+<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
+<script type="text/javascript" src="{% static 'app.js' %}"></script>
+<script type="text/javascript" src="{% static 'main.js' %}"></script>
+</head>
+<body>
+    <div id="header">
+        <p id="title">Maps for Traffic[F]low</p>
+        <p id="license">The maps data © OpenStreetMap contributors</p>
+    </div>
+    <div id="content"></div>
+    <div id="info">
+        <p></p>
+    </div>
+</body>
+</html>

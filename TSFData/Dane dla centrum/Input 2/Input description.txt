@@ -1,3 +1,0 @@
-Initial number of cars: 30000
-Additional cars: 	10
-Time gap [steps]: 	1
