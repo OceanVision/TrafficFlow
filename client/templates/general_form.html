@@ -1,0 +1,8 @@
+{% extends 'index.html' %}
+{% block body %}
+<form id="{{ form_id }}" action="" method="post" data-center-h="true" data-center-v="true">
+    {% csrf_token %} {#cross site request forgery protection#}
+    {{ form }}
+    <input class="submit" type="submit" value="{{ form_submit }}">
+</form>
+{% endblock %}

@@ -3,21 +3,33 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Maps for Traffic[F]low</title>
+<title>Traffic[F]low</title>
 <link type="text/css" rel="stylesheet" href="{% static 'general.css' %}"/>
 <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
-<script src="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
-<script type="text/javascript" src="{% static 'app.js' %}"></script>
 <script type="text/javascript" src="{% static 'main.js' %}"></script>
 </head>
 <body>
-    <div id="header">
-        <p id="title">Maps for Traffic[F]low</p>
-        <p id="license">The maps data © OpenStreetMap contributors</p>
-    </div>
-    <div id="content"></div>
-    <div id="info">
-        <p></p>
-    </div>
+    <header>
+        <summary>
+            <a href="./">
+                <p id="title">Traffic[F]low</p>
+                <p id="license">The maps data © OpenStreetMap contributors</p>
+            </a>
+        </summary>
+        <nav>
+            {% if not user.is_authenticated %}
+            <p>You are not signed in.</p>
+            <a class="highlighted" href="./sign_in">Sign in</a>
+            <a href="./sign_up">Sign up</a>
+            {% else %}
+            <p>You are signed in as <b>{{ user.username }}</b>.</p>
+            <a class="highlighted" href="./sign_out">Sign out</a>
+            {% endif %}
+        </nav>
+    </header>
+    {% block body %}
+
+    {% endblock %}
+    <div id="info-box"></div>
 </body>
 </html>

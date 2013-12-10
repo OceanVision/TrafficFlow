@@ -1,4 +1,5 @@
 @CHARSET "UTF-8";
+/* ========== G E N E R A L ========== */
 
 * {
     margin: 0px;
@@ -8,49 +9,109 @@
 }
 
 body {
-	background-color: #e4f2f2;
+	background-color: #f0f0f0;
 	overflow: hidden;
 }
 
-div#header, div#info {
+input {
+    background-color: transparent;
+    border: 0px;
+    border-bottom: 2px solid #ccc;
+    width: 200px;
+    display: inline-block;
+    margin-bottom: 25px;
+    padding: 5px 10px;
+    font-size: 20px;
+    color: #00b3b3;
+    outline: none;
+}
+
+/* ========== H E A D E R ========== */
+
+header {
     width: 100%;
     left: 0px;
     position: fixed;
     z-index: 1;
 }
 
-div#header {
+header {
 	background-color: #00b3b3;
-	border-bottom: 4px solid #73DEDE;
+	box-shadow: 0px 0px 15px #999;
 	top: 0px;
-    padding: 10px 0px 10px 40px;
+    padding: 10px 0px;
 }
 
-div#header p#title {
+header summary {
+    display: inline-block;
+    margin-left: 40px;
+}
+
+header summary a {
+    text-decoration: none;
+}
+
+header summary p#title {
 	font-size: 24px;
     color: #fff;
     /*text-shadow: 1px 1px 1px #777;*/
 }
 
-div#header p#license {
+header summary p#license {
 	font-size: 11px;
 	color: #fff;
 }
 
-div#info {
-	opacity: 0;
-	bottom: 20px;
-	text-align: center;
+header nav {
+    display: inline-block;
+    margin-right: 40px;
+    float: right;
 }
 
-div#info p {
-	background-color: #fff;
+header nav a, header nav p {
+    margin-left: 5px;
+    font-size: 14px;
+	color: #fff;
+    text-decoration: none;
+}
+
+header nav p {
+    display: inline-block;
+    font-style: italic;
+}
+
+header nav a.highlighted {
+    font-weight: bold;
+}
+
+/* ========== C O N T E N T ========== */
+
+div#content {
+    background-color: #fff;
+    border-left: 2px solid #e0e0e0;
+    border-right: 2px solid #e0e0e0;
+    border-bottom: 5px solid #e0e0e0;
+    width: 65%;
+    margin: 0px auto 40px auto;
+    padding: 90px 30px;
+}
+
+/* ========== I N F O   B O X ========== */
+
+div#info-box {
+    background-color: #fff;
 	border-top: 3px solid #00b3b3;
 	display: inline-block;
+    position: fixed;
+    bottom: 20px;
+    z-index: 1;
+    opacity: 0;
     padding: 8px 12px;
     font-size: 14px;
     color: #333;
 }
+
+/* ========== T I L E ========== */
 
 div.tile, div.tile img {
     width: 256px;
@@ -68,13 +129,49 @@ div.tile {
     user-select: none;
 }
 
-div#pointer {
-	background-color: #ffa617;
+/* ========== P O I N T E R ========== */
+
+div.pointer {
+	background-color: #74899d;
 	width: 16px;
 	height: 16px;
 	display: none;
 	position: absolute;
 	z-index: 1;
 	border-radius: 8px;
-	box-shadow: 0px 0px 12px #ffd117;
+	box-shadow: 0px 0px 12px #aaa;
+}
+
+div.pointer.location {
+    background-color: #ffbd0d;
+    box-shadow: 0px 0px 12px #ffd117;
+}
+
+/* ========== S I G N   U P ========== */
+
+form {
+    display: inline-block;
+    position: absolute;
+}
+
+form#sign-up, form#sign-in {
+    width: 390px;
+}
+
+form label {
+    width: 170px;
+    display: inline-block;
+    font-size: 20px;
+    color: #ccc;
+}
+
+form input.submit {
+    background-color: #00b3b3;
+    width: auto;
+    border: 0px;
+    display: inline-block;
+    float: right;
+    padding: 8px 10px;
+    font-size: 20px;
+    color: #fff;
 }
