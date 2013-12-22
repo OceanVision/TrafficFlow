@@ -5,8 +5,16 @@
 <meta charset="UTF-8">
 <title>Traffic[F]low</title>
 <link type="text/css" rel="stylesheet" href="{% static 'general.css' %}"/>
-<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="{% static 'prototype.js' %}"></script>
+<script src="{% static 'jquery-1.10.2.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'main.js' %}"></script>
+<script type="text/javascript" src="{% static 'map.js' %}"></script>
+<script type="text/javascript" src="{% static 'graph.js' %}"></script>
+<script type="text/javascript" src="{% static 'coords.js' %}"></script>
+<script type="text/javascript" src="{% static 'geolocation.js' %}"></script>
+<script>
+    jQuery.noConflict();
+</script>
 </head>
 <body>
     <header>
@@ -18,12 +26,12 @@
         </summary>
         <nav>
             {% if not user.is_authenticated %}
-            <p>You are not signed in.</p>
-            <a class="highlighted" href="./sign_in">Sign in</a>
+            <p id="auth-state">You are not signed in.</p>
+            <a class="highlighted" href="./sign_in">Sign in</a> |
             <a href="./sign_up">Sign up</a>
             {% else %}
-            <p>You are signed in as <b>{{ user.username }}</b>.</p>
-            <a class="highlighted" href="./sign_out">Sign out</a>
+            <p id="auth-state">You are signed in as <b>{{ user.username }}</b>.</p>
+            <a href="./sign_out">Sign out</a>
             {% endif %}
         </nav>
     </header>

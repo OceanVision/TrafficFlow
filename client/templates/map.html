@@ -1,10 +1,10 @@
 {% extends 'index.html' %}
 {% block body %}
+<canvas id="street-graph"></canvas>
 <div id="map">
     <script type="text/javascript">
-        $(document).on("ready", function() {
-            main.getLocation();
-            setTimeout(main.startMap.bind(main), 1000);
+        jQuery(document).on('ready', function() {
+            setTimeout(map.start.bind(map), 300);
         });
     </script>
 </div>

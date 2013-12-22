@@ -66,17 +66,24 @@ header nav {
     display: inline-block;
     margin-right: 40px;
     float: right;
+    color: #fff;
 }
 
 header nav a, header nav p {
-    margin-left: 5px;
+    margin: 0px 5px;
     font-size: 14px;
 	color: #fff;
     text-decoration: none;
 }
 
 header nav p {
+    margin: 0px 0px 0px 30px;
     display: inline-block;
+    font-weight: bold;
+}
+
+header nav p#auth-state {
+    font-weight: normal;
     font-style: italic;
 }
 
@@ -119,7 +126,9 @@ div.tile, div.tile img {
 }
 
 div.tile {
+    /* border: 1px solid #eee; */
 	position: absolute;
+    z-index: 0;
     opacity: 0;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -127,6 +136,14 @@ div.tile {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+
+div.tile canvas {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0px;
+    top: 0px;
 }
 
 /* ========== P O I N T E R ========== */
@@ -154,7 +171,10 @@ form {
     position: absolute;
 }
 
-form#sign-up, form#sign-in {
+form#sign-up, form#sign-in,
+form#add-street-node, form#delete-street-nodes,
+form#add-street-edge, form#delete-street-edges,
+form#add-favorite-point, form#delete-favorite-points {
     width: 390px;
 }
 
