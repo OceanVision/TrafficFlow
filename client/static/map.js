@@ -122,9 +122,9 @@ var Tile = Class.create({
         ctx.strokeStyle = '#FF0000';
         for (var i = 0; i < lines.length; i++) {
             ctx.beginPath();
-            ctx.lineWidth = 2;
-            ctx.moveTo(lines[i][0].x, lines[i][0].y);
-            ctx.lineTo(lines[i][1].x, lines[i][1].y);
+            ctx.lineWidth = lines[i].width;
+            ctx.moveTo(lines[i].points[0].x, lines[i].points[0].y);
+            ctx.lineTo(lines[i].points[1].x, lines[i].points[1].y);
             ctx.stroke();
         }
     }
@@ -220,11 +220,30 @@ var Map = Class.create({
                 pointer : new LocationPointer(coords)
             });
 
+            // TESTY
             var node1 = graph.addNode(new SphericalCoords(19.90606, 50.02688, 17));
-            var node2 = graph.addNode(new SphericalCoords(19.91293, 50.02975, 17));
-            var node3 = graph.addNode(new SphericalCoords(19.91281, 50.02988, 17));
-            graph.addEdge(node1, node2);
-            graph.addEdge(node2, node3);
+            var node2 = graph.addNode(new SphericalCoords(19.91291, 50.02975, 17));
+            graph.addLine(node1, node2, 2);
+
+            var node3 = graph.addNode(new SphericalCoords(19.91295, 50.02976, 17));
+            graph.addLine(node2, node3);
+
+            var node4 = graph.addNode(new SphericalCoords(19.91471, 50.02806, 17));
+            graph.addLine(node2, node3);
+
+            var node5 = graph.addNode(new SphericalCoords(19.91474, 50.02808, 17));
+            graph.addLine(node3, node5);
+
+            var node6 = graph.addNode(new SphericalCoords(19.91449, 50.02798, 17));
+            var node7 = graph.addNode(new SphericalCoords(19.91316, 50.02740, 17));
+            var node8 = graph.addNode(new SphericalCoords(19.91288, 50.02719, 17));
+            var node9 = graph.addNode(new SphericalCoords(19.91276, 50.02702, 17));
+            var node10 = graph.addNode(new SphericalCoords(19.91272, 50.02690, 17));
+            graph.addLine(node5, node6);
+            graph.addLine(node6, node7);
+            graph.addLine(node7, node8);
+            graph.addLine(node8, node9);
+            graph.addLine(node9, node10);
             // KONIEC TESTÓW
 
             main.showInfo("Your location has been retrieved (accuracy: " + accuracy + " metres).");

@@ -4,8 +4,7 @@ var StreetsNode = Class.create({
         this.coords = coords;
         this.title = title;
         this.description = description;
-        this.neighbours = [];
-        this.colour = false;
+        this.outboundLines = [];
     },
 
     getPositionInTile : function() {
@@ -23,6 +22,16 @@ var StreetsNode = Class.create({
     }
 });
 
+/* ========== S T R E E T S   L I N E   C L A S S ========== */
+var StreetsLine = Class.create({
+    initialize : function(node, ways, distance) {
+        this.node = node;
+        this.ways = ways;
+        this.distance = distance;
+        this.colour = false;
+    }
+});
+
 /* ========== S T R E E T S   G R A P H   C L A S S ========== */
 var StreetsGraph = Class.create({
     initialize : function(nodes) {
@@ -36,20 +45,18 @@ var StreetsGraph = Class.create({
         return newNode;
     },
 
-    addEdge : function(startNode, endNode, distance) {
-        // TODO: zabezpieczyć
-        startNode.neighbours.push({
-            node : endNode,
-            distance : distance
-        });
+    addLine : function(startNode, endNode, ways, distance) {
+        ways = typeof ways != 'undefined' ? ways : 1;
+        distance = typeof distance != 'undefined' ? distance : 1;
+        startNode.outboundLines.push(new StreetsLine(endNode, ways, distance));
     },
 
     getCopy : function() {
-        // TODO: zabezpieczyć
         return new StreetsGraph(this.nodes);
     },
 
-    detectStreetsLines : function(startNode, endNode) {
+    // TODO: aktualnie jest problem z rysowaniem prawie pionowych linii
+    detectStreetsLines : function(startNode, endNode, ways) {
         var startNodeCoords = startNode.coords.toCartesian(),
             endNodeCoords = endNode.coords.toCartesian(),
             startX, endX, startY, endY;
@@ -86,45 +93,48 @@ var StreetsGraph = Class.create({
                     rt = osm.toCartesian(1, 0),
                     lb = osm.toCartesian(0, 1),
                     rb = osm.toCartesian(1, 1),
-                    singleLine = [];
+                    singleLine = {
+                        points : [],
+                        width : 2 * ways
+                    };
 
                 if (lt.toOSM().compare(startNode.coords.toOSM())) {
-                    singleLine.push(startNode.getPositionInTile());
+                    singleLine.points.push(startNode.getPositionInTile());
                 }
 
                 if (lt.toOSM().compare(endNode.coords.toOSM())) {
-                    singleLine.push(endNode.getPositionInTile());
+                    singleLine.points.push(endNode.getPositionInTile());
                 }
 
                 if (func.fInv(lt.second) >= lt.first && func.fInv(lt.second) <= rt.first) {
-                    singleLine.push({
+                    singleLine.points.push({
                         x : func.fInv(lt.second) - lt.first,
                         y : 0
                     });
                 }
 
                 if (func.f(rt.first) >= rb.second && func.f(rt.first) <= rt.second) {
-                    singleLine.push({
+                    singleLine.points.push({
                         x : 256,
                         y : rt.second - func.f(rt.first)
                     });
                 }
 
                 if (func.fInv(lb.second) >= lb.first && func.fInv(lb.second) <= rb.first) {
-                    singleLine.push({
+                    singleLine.points.push({
                         x : func.fInv(lb.second) - lb.first,
                         y : 256
                     });
                 }
 
                 if (func.f(lt.first) >= lb.second && func.f(lt.first) <= lt.second) {
-                    singleLine.push({
+                    singleLine.points.push({
                         x : 0,
                         y : lt.second - func.f(lt.first)
                     });
                 }
 
-                if (singleLine.length == 2) {
+                if (singleLine.points.length == 2) {
                     drawingTasks.pushTask(new OSMCoords(i, j, 17), singleLine);
                 }
             }
@@ -132,24 +142,24 @@ var StreetsGraph = Class.create({
     },
 
     visitNode : function(node) {
-        for (var i = 0; i < node.neighbours.length; i++) {
-            if (!(node.neighbours[i].node.colour)) {
-                this.visitNode(node.neighbours[i].node);
-                this.detectStreetsLines(node, node.neighbours[i].node);
+        for (var i = 0; i < node.outboundLines.length; i++) {
+            if (!(node.outboundLines[i].colour)) {
+                this.detectStreetsLines(node, node.outboundLines[i].node, node.outboundLines[i].ways);
+                this.visitNode(node.outboundLines[i].node);
+                node.outboundLines[i].colour = true;
             }
         }
-        node.colour = true;
     },
 
     DFS : function() {
         for (var i = 0; i < this.nodes.length; i++) {
-            this.nodes[i].colour = false;
+            for (var j = 0; j < this.nodes[i].outboundLines.length; j++) {
+                this.nodes[i].outboundLines[j].colour = false;
+            }
         }
 
         for (var i = 0; i < this.nodes.length; i++) {
-            if (!this.nodes[i].colour) {
-                this.visitNode(this.nodes[i]);
-            }
+            this.visitNode(this.nodes[i]);
         }
     }
 });
