@@ -10,6 +10,8 @@ urlpatterns = patterns('',
     url(r'^sign_out$', views.sign_out, name='sign_out'),
     url(r'^sign_up$', views.sign_up, name='sign_up'),
 
+    url(r'^get_graph$', views.get_graph, name='get_graph'),
+
     url(r'^create_exemplary_data$', views.create_exemplary_data, name='create_exemplary_data'),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),

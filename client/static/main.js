@@ -43,6 +43,7 @@ var Main = Class.create({
 jQuery(document).on("ready", function() {
     main = new Main();
     geolocation = new Geolocation();
+    ajax = new Ajax();
     map = new Map();
     drawingTasks = new DrawingTasks();
     graph = new StreetsGraph();

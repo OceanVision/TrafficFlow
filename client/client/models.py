@@ -10,5 +10,6 @@ class StreetsNode(models.Model):
 
 
 class StreetsLine(models.Model):
-    start_node = models.ForeignKey(StreetsNode, related_name='streetedge_start_nodes')
-    end_node = models.ForeignKey(StreetsNode, related_name='streetedge_end_nodes')
+    start_node = models.ForeignKey(StreetsNode, related_name='streetsline_start_nodes')
+    end_node = models.ForeignKey(StreetsNode, related_name='streetsline_end_nodes')
+    ways = models.IntegerField(default=1)

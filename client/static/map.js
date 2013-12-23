@@ -1,175 +1,3 @@
-/* ========== L I N E A R   F U N C T I O N   C L A S S ========== */
-var LinearFunction = Class.create({
-    initialize : function(a, b, domain) {
-        this.a = a;
-        this.b = b;
-        this.domain = domain;
-    },
-
-    f : function(x) {
-        if (x >= this.domain[0] && x <= this.domain[1]) {
-            return this.a * x + this.b;
-        }
-        return null;
-    },
-
-    fInv : function(y) {
-        var x = (y - this.b) / this.a;
-        if (x >= this.domain[0] && x <= this.domain[1]) {
-            return x;
-        }
-        return null;
-    }
-});
-
-/* ========== P O I N T E R   C L A S S ========== */
-var Pointer = Class.create({
-    initialize : function(coords) { // coords muszą być sferyczne, inaczej to nie ma sensu
-        this.coords = coords;
-        this.size = 16;
-    },
-
-    getPositionInTile : function() {
-        var osm = this.coords.toOSM(),
-            spherical = osm.toSpherical();
-        osm.first++;
-        osm.second++;
-        var sphericalNext = osm.toSpherical();
-        return {
-            x: ((this.coords.first - spherical.first) /
-                (sphericalNext.first - spherical.first)) * 256 - this.size / 2,
-            y: ((this.coords.second - spherical.second) /
-                (sphericalNext.second - spherical.second)) * 256 - this.size / 2
-        };
-    },
-
-    toElement : function() {
-        var pointer = jQuery('<div class="pointer"></div>'),
-            position = this.getPositionInTile();
-        pointer.css({
-            left: position.x + "px",
-            top: position.y + "px"
-        });
-        return pointer;
-    }
-});
-
-/* ========== L O C A T I O N   P O I N T E R   C L A S S ========== */
-var LocationPointer = Class.create(Pointer, {
-    toElement : function() {
-        var pointer = jQuery('<div class="pointer location"></div>'),
-            position = this.getPositionInTile();
-        pointer.css({
-            left: position.x + "px",
-            top: position.y + "px"
-        });
-        return pointer;
-    }
-});
-
-/* ========== T I L E   C L A S S ========== */
-var Tile = Class.create({
-    tilesServerURL : 'http://c.tile.openstreetmap.org',
-
-    initialize : function(coords) {
-        this.coords = coords.toOSM();
-        var img = jQuery('<img/>').attr("src", this.tilesServerURL + "/"
-                + this.coords.zoom + "/" + this.coords.first + "/" + this.coords.second + ".png"),
-            canvas = jQuery('<canvas width="256" height="256"></canvas>');
-
-        this.element = jQuery('<div class="tile"></div>');
-        this.element
-            .append(img)
-            .append(canvas);
-
-        this.img = img[0];
-        this.img.onload = (function() {
-            this.drawStreetsLines();
-            this.appendPointers();
-            this.element.animate({
-                opacity: 1
-            }, 500);
-        }).bind(this);
-
-        this.pointers = [];
-    },
-
-    setPointers : function(pointers) {
-        for (var i = 0; i < pointers.length; i++) {
-            if (this.coords.compare(pointers[i].osm)) {
-                this.pointers.push(pointers[i].pointer);
-            }
-        }
-    },
-
-    appendPointers : function() {
-        for (var i = 0; i < this.pointers.length; i++) {
-            this.pointers[i]
-                .toElement()
-                .appendTo(this.element)
-                .show();
-        }
-    },
-
-    drawStreetsLines : function() {
-        var task = drawingTasks.getTask(this.coords);
-        if (task == null) {
-            return;
-        }
-
-        var lines = task.lines,
-            ctx = this.element.find('canvas')[0].getContext('2d');
-        ctx.strokeStyle = '#FF0000';
-        for (var i = 0; i < lines.length; i++) {
-            ctx.beginPath();
-            ctx.lineWidth = lines[i].width;
-            ctx.moveTo(lines[i].points[0].x, lines[i].points[0].y);
-            ctx.lineTo(lines[i].points[1].x, lines[i].points[1].y);
-            ctx.stroke();
-        }
-    }
-});
-
-/* ========== T I L E   D A T A   C L A S S ========== */
-var TileData = Class.create({
-    initialize : function(coords, line) {
-        this.coords = coords.toOSM();
-        this.lines = [line];
-    }
-});
-
-/* ========== D R A W I N G   T A S K S   C L A S S ========== */
-var DrawingTasks = Class.create({
-    initialize : function() {
-        this.tasks = [];
-    },
-
-    pushTask : function(coords, line) {
-        var found = -1;
-        for (var i = 0; i < this.tasks.length; i++) {
-            if (this.tasks[i].coords.compare(coords.toOSM())) {
-                found = i;
-                break;
-            }
-        }
-
-        if (found == -1) {
-            this.tasks.push(new TileData(coords, line));
-        } else {
-            this.tasks[i].lines.push(line);
-        }
-    },
-
-    getTask : function(coords) {
-        for (var i = 0; i < this.tasks.length; i++) {
-            if (this.tasks[i].coords.compare(coords.toOSM())) {
-                return this.tasks[i];
-            }
-        }
-        return null;
-    }
-});
-
 /* ========== M A P   C L A S S ========== */
 var Map = Class.create({
     content : null,
@@ -220,33 +48,19 @@ var Map = Class.create({
                 pointer : new LocationPointer(coords)
             });
 
-            // TESTY
-            var node1 = graph.addNode(new SphericalCoords(19.90606, 50.02688, 17));
-            var node2 = graph.addNode(new SphericalCoords(19.91291, 50.02975, 17));
-            graph.addLine(node1, node2, 2);
+            // Pobiera graf z bazy danych
+            ajax.getJSON('get_graph', function(data) {
+                for (var i = 0; i < data.nodes.length; i++) {
+                    graph.addNode(data.nodes[i].id,
+                        new SphericalCoords(data.nodes[i].longitude, data.nodes[i].latitude, 17));
+                }
 
-            var node3 = graph.addNode(new SphericalCoords(19.91295, 50.02976, 17));
-            graph.addLine(node2, node3);
+                for (var i = 0; i < data.lines.length; i++) {
+                    graph.addLine(data.lines[i].startNodeId, data.lines[i].endNodeId, data.lines[i].ways);
+                }
 
-            var node4 = graph.addNode(new SphericalCoords(19.91471, 50.02806, 17));
-            graph.addLine(node2, node4);
-
-            var node5 = graph.addNode(new SphericalCoords(19.91474, 50.02808, 17));
-            graph.addLine(node3, node5);
-
-            var node6 = graph.addNode(new SphericalCoords(19.91449, 50.02798, 17));
-            var node7 = graph.addNode(new SphericalCoords(19.91316, 50.02740, 17));
-            var node8 = graph.addNode(new SphericalCoords(19.91288, 50.02719, 17));
-            var node9 = graph.addNode(new SphericalCoords(19.91276, 50.02703, 17));
-            var node10 = graph.addNode(new SphericalCoords(19.91272, 50.02690, 17));
-            var node11 = graph.addNode(new SphericalCoords(19.91271, 50.02671, 17));
-            graph.addLine(node5, node6);
-            graph.addLine(node6, node7);
-            graph.addLine(node7, node8);
-            graph.addLine(node8, node9);
-            graph.addLine(node9, node10);
-            graph.addLine(node10, node11);
-            // KONIEC TESTÓW
+                graph.DFS();
+            });
 
             main.showInfo("Your location has been retrieved (accuracy: " + accuracy + " metres).");
             map.load();
@@ -256,7 +70,6 @@ var Map = Class.create({
     },
 
     load : function() {
-        graph.DFS();
         for (var i = 0; i < this.buffer.width; ++i) {
             for (var j = 0; j < this.buffer.height; ++j) {
                 this.tiles[i][j] =

@@ -1,6 +1,7 @@
 /* ========== S T R E E T S   N O D E   C L A S S ========== */
 var StreetsNode = Class.create({
-    initialize : function(coords, title, description) { // coords muszą być sferyczne, inaczej to nie ma sensu
+    initialize : function(id, coords, title, description) { // coords muszą być sferyczne, inaczej to nie ma sensu
+        this.id = id;
         this.coords = coords;
         this.title = title;
         this.description = description;
@@ -24,11 +25,12 @@ var StreetsNode = Class.create({
 
 /* ========== S T R E E T S   L I N E   C L A S S ========== */
 var StreetsLine = Class.create({
-    initialize : function(node, ways, distance) {
+    initialize : function(node, colour, ways, distance) {
         this.node = node;
+        this.colour = colour;
         this.ways = ways;
         this.distance = distance;
-        this.colour = false;
+        this.isVisited = false;
     }
 });
 
@@ -39,25 +41,49 @@ var StreetsGraph = Class.create({
         this.nodes = newNodes;
     },
 
-    addNode : function(coords, title, description) {
-        var newNode = new StreetsNode(coords, title, description);
+    addNode : function(id, coords, title, description) {
+        title = typeof title != 'undefined' ? title : '';
+        description = typeof description != 'undefined' ? description : '';
+
+        if (this.findNodeById(id) != null) {
+            return null;
+        }
+
+        var newNode = new StreetsNode(id, coords, title, description);
         this.nodes.push(newNode);
         return newNode;
     },
 
-    addLine : function(startNode, endNode, ways, distance) {
+    addLine : function(startNodeId, endNodeId, ways, colour, distance) {
         ways = typeof ways != 'undefined' ? ways : 1;
+        colour = typeof colour != 'undefined' ? colour : '555555';
         distance = typeof distance != 'undefined' ? distance : 1;
-        startNode.outboundLines.push(new StreetsLine(endNode, ways, distance));
+
+        var startNode = this.findNodeById(startNodeId),
+            endNode = this.findNodeById(endNodeId);
+
+        if (startNode == null || endNode == null) {
+            return null;
+        }
+
+        var newLine = new StreetsLine(endNode, colour, ways, distance);
+        startNode.outboundLines.push(newLine);
+        return newLine;
     },
 
-    getCopy : function() {
-        return new StreetsGraph(this.nodes);
+    findNodeById : function(nodeId) {
+        for (var i = 0; i < this.nodes.length; i++) {
+            if (this.nodes[i].id == nodeId) {
+                return this.nodes[i];
+            }
+        }
+        return null;
     },
 
     // TODO: aktualnie jest problem z rysowaniem prawie pionowych linii
-    detectStreetsLines : function(startNode, endNode, ways) {
-        var startNodeCoords = startNode.coords.toCartesian(),
+    detectStreetsLines : function(startNode, line) {
+        var endNode = line.node,
+            startNodeCoords = startNode.coords.toCartesian(),
             endNodeCoords = endNode.coords.toCartesian(),
             startX, endX, startY, endY;
 
@@ -101,7 +127,8 @@ var StreetsGraph = Class.create({
                     rb = osm.toCartesian(1, 1),
                     singleLine = {
                         points : [],
-                        width : 2 * ways
+                        width : 2 * line.ways,
+                        colour : line.colour
                     };
 
                 if (lt.toOSM().compare(startNode.coords.toOSM())) {
@@ -149,10 +176,10 @@ var StreetsGraph = Class.create({
 
     visitNode : function(node) {
         for (var i = 0; i < node.outboundLines.length; i++) {
-            if (!(node.outboundLines[i].colour)) {
-                this.detectStreetsLines(node, node.outboundLines[i].node, node.outboundLines[i].ways);
+            if (!(node.outboundLines[i].isVisited)) {
+                this.detectStreetsLines(node, node.outboundLines[i]);
                 this.visitNode(node.outboundLines[i].node);
-                node.outboundLines[i].colour = true;
+                node.outboundLines[i].isVisited = true;
             }
         }
     },
@@ -160,7 +187,7 @@ var StreetsGraph = Class.create({
     DFS : function() {
         for (var i = 0; i < this.nodes.length; i++) {
             for (var j = 0; j < this.nodes[i].outboundLines.length; j++) {
-                this.nodes[i].outboundLines[j].colour = false;
+                this.nodes[i].outboundLines[j].isVisited = false;
             }
         }
 

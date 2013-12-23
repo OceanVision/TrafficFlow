@@ -29,33 +29,62 @@ def sign_up(request):
     user.save()
 
 
+# ========== S T R E E T S   G R A P H   M A N A G E M E N T ==========
+def get_nodes():
+    retrieved_nodes = StreetsNode.objects.all()
+    data = []
+    for node in retrieved_nodes:
+        data.append({'id': node.id,
+                     'longitude': node.longitude,
+                     'latitude': node.latitude,
+                     'title': node.title,
+                     'description': node.description})
+    return data
+
+
+def get_lines():
+    retrieved_lines = StreetsLine.objects.all()
+    data = []
+    for line in retrieved_lines:
+        data.append({'startNodeId': line.start_node.id,
+                     'endNodeId': line.end_node.id,
+                     'ways': line.ways})
+    return data
+
+
 # ========== E X T R A S ==========
 def create_exemplary_data():
     StreetsNode.objects.all().delete()
 
-    # create street nodes
-    street_nodes = list()
-    street_nodes.append(StreetsNode(longitude=19.90607, latitude=50.02688, title='Kawiarnia 1', description=''))
-    street_nodes.append(StreetsNode(longitude=19.91293, latitude=50.02975, title='Mechanik 2', description=''))
-    street_nodes.append(StreetsNode(longitude=19.97607, latitude=50.02438, title='Firma 3', description=''))
-    street_nodes.append(StreetsNode(longitude=19.91211, latitude=50.01912, title='Biblioteka 4', description=''))
+    # create streets nodes
+    streets_nodes = list()
+    streets_nodes.append(StreetsNode(longitude=19.90606, latitude=50.02688, title='', description=''))
+    streets_nodes.append(StreetsNode(longitude=19.91291, latitude=50.02975, title='', description=''))
+    streets_nodes.append(StreetsNode(longitude=19.91295, latitude=50.02976, title='', description=''))
+    streets_nodes.append(StreetsNode(longitude=19.91471, latitude=50.02806, title='', description=''))
+    streets_nodes.append(StreetsNode(longitude=19.91474, latitude=50.02808, title='', description=''))
+    streets_nodes.append(StreetsNode(longitude=19.91449, latitude=50.02798, title='', description=''))
+    streets_nodes.append(StreetsNode(longitude=19.91316, latitude=50.02740, title='', description=''))
+    streets_nodes.append(StreetsNode(longitude=19.91288, latitude=50.02719, title='', description=''))
+    streets_nodes.append(StreetsNode(longitude=19.91276, latitude=50.02703, title='', description=''))
+    streets_nodes.append(StreetsNode(longitude=19.91272, latitude=50.02690, title='', description=''))
+    streets_nodes.append(StreetsNode(longitude=19.91270, latitude=50.02671, title='', description=''))
 
-    for node in street_nodes:
+    for node in streets_nodes:
         node.save()
 
-    # create street edges
-    street_edges = list()
-    start_node = StreetsNode.objects.get(id=1)
-    end_node = StreetsNode.objects.get(id=2)
-    street_edges.append(StreetsLine(start_node=start_node, end_node=end_node))
+    # create streets lines
+    streets_lines = list()
+    streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=1), end_node=StreetsNode.objects.get(id=2), ways=2))
+    streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=2), end_node=StreetsNode.objects.get(id=3)))
+    streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=2), end_node=StreetsNode.objects.get(id=4)))
+    streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=3), end_node=StreetsNode.objects.get(id=5)))
+    streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=4), end_node=StreetsNode.objects.get(id=6)))
+    streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=6), end_node=StreetsNode.objects.get(id=7)))
+    streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=7), end_node=StreetsNode.objects.get(id=8)))
+    streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=8), end_node=StreetsNode.objects.get(id=9)))
+    streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=9), end_node=StreetsNode.objects.get(id=10)))
+    streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=10), end_node=StreetsNode.objects.get(id=11)))
 
-    start_node = StreetsNode.objects.get(id=3)
-    end_node = StreetsNode.objects.get(id=1)
-    street_edges.append(StreetsLine(start_node=start_node, end_node=end_node))
-
-    start_node = StreetsNode.objects.get(id=4)
-    end_node = StreetsNode.objects.get(id=2)
-    street_edges.append(StreetsLine(start_node=start_node, end_node=end_node))
-
-    for edge in street_edges:
-        edge.save()
+    for line in streets_lines:
+        line.save()

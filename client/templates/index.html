@@ -3,11 +3,14 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Traffic[F]low</title>
+<title>traffic[F]low</title>
+<link href='http://fonts.googleapis.com/css?family=Alegreya+Sans:400,800' rel='stylesheet' type='text/css'>
 <link type="text/css" rel="stylesheet" href="{% static 'general.css' %}"/>
 <script src="{% static 'prototype.js' %}"></script>
 <script src="{% static 'jquery-1.10.2.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'main.js' %}"></script>
+<script type="text/javascript" src="{% static 'ajax.js' %}"></script>
+<script type="text/javascript" src="{% static 'utils.js' %}"></script>
 <script type="text/javascript" src="{% static 'map.js' %}"></script>
 <script type="text/javascript" src="{% static 'graph.js' %}"></script>
 <script type="text/javascript" src="{% static 'coords.js' %}"></script>
@@ -20,7 +23,7 @@
     <header>
         <summary>
             <a href="./">
-                <p id="title">Traffic[F]low</p>
+                <p id="title"><span id="part1">traffic</span><span id="part2">[F]</span><span id="part3">low</span></p>
                 <p id="license">The maps data © OpenStreetMap contributors</p>
             </a>
         </summary>
@@ -30,7 +33,7 @@
             <a class="highlighted" href="./sign_in">Sign in</a> |
             <a href="./sign_up">Sign up</a>
             {% else %}
-            <p id="auth-state">You are signed in as <b>{{ user.username }}</b>.</p>
+            <p id="auth-state">You are signed in as <span>{{ user.username }}</span>.</p>
             <a href="./sign_out">Sign out</a>
             {% endif %}
         </nav>

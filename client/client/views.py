@@ -1,7 +1,8 @@
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from forms import SignInForm, SignUpForm
 import utils
+import json
 
 
 def index(request):
@@ -54,6 +55,13 @@ def sign_up(request):
         return render(request, 'general_form.html', {'form_id': 'sign-up',
                                                      'form_submit': 'sign up',
                                                      'form': form})
+
+
+# ========== S T R E E T S   G R A P H   M A N A G E M E N T ==========
+def get_graph(request):
+    data = {'nodes': utils.get_nodes(),
+            'lines': utils.get_lines()}
+    return HttpResponse(json.dumps(data), content_type="application/json")
 
 
 # ========== E X T R A S ==========

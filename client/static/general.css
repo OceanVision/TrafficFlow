@@ -4,7 +4,7 @@
 * {
     margin: 0px;
     padding: 0px;
-    font-family: Trebuchet MS, Arial, sans-serif;
+    font-family: 'Arial', sans-serif;
     -webkit-user-drag: none;
 }
 
@@ -22,73 +22,81 @@ input {
     margin-bottom: 25px;
     padding: 5px 10px;
     font-size: 20px;
-    color: #00b3b3;
+    color: #8ec200;
     outline: none;
 }
 
 /* ========== H E A D E R ========== */
 
 header {
+    background-color: #fff;
+	box-shadow: 0px 0px 15px #aaa;
     width: 100%;
-    left: 0px;
+    display: table;
     position: fixed;
+    left: 0px;
+	top: 0px;
     z-index: 1;
 }
 
-header {
-	background-color: #00b3b3;
-	box-shadow: 0px 0px 15px #999;
-	top: 0px;
-    padding: 10px 0px;
-}
-
 header summary {
-    display: inline-block;
-    margin-left: 40px;
+    display: table-cell;
+    vertical-align: middle;
+    padding: 6px 0px 10px 40px;
 }
 
 header summary a {
     text-decoration: none;
 }
 
-header summary p#title {
-	font-size: 24px;
-    color: #fff;
+header summary p#title span {
+    font-family: 'Alegreya Sans';
+    font-weight: 800;
+	font-size: 30px;
     /*text-shadow: 1px 1px 1px #777;*/
+}
+
+header summary p#title span#part1 {
+    color: #999;
+}
+
+header summary p#title span#part2 {
+    color: #bbb;
+}
+
+header summary p#title span#part3 {
+    color: #8ec200;
 }
 
 header summary p#license {
 	font-size: 11px;
-	color: #fff;
+	color: #bbb;
 }
 
 header nav {
-    display: inline-block;
-    margin-right: 40px;
-    float: right;
+    width: 400px;
+    display: table-cell;
+    vertical-align: middle;
+    padding-right: 40px;
     color: #fff;
+    text-align: right;
 }
 
-header nav a, header nav p {
-    margin: 0px 5px;
+header nav a, header nav p#auth-state {
+    margin: 0px 10px;
     font-size: 14px;
-	color: #fff;
+	color: #999;
     text-decoration: none;
 }
 
-header nav p {
-    margin: 0px 0px 0px 30px;
-    display: inline-block;
-    font-weight: bold;
-}
-
 header nav p#auth-state {
-    font-weight: normal;
+    display: inline-block;
     font-style: italic;
 }
 
-header nav a.highlighted {
+header nav a.highlighted, header nav p#auth-state span {
     font-weight: bold;
+    color: #8ec200;
 }
 
 /* ========== C O N T E N T ========== */
@@ -107,10 +115,10 @@ div#content {
 
 div#info-box {
     background-color: #fff;
-	border-top: 3px solid #00b3b3;
+	border-top: 3px solid #8ec200;
 	display: inline-block;
     position: fixed;
-    bottom: 20px;
+    top: 100px;
     z-index: 1;
     opacity: 0;
     padding: 8px 12px;
@@ -160,8 +168,8 @@ div.pointer {
 }
 
 div.pointer.location {
-    background-color: #ffbd0d;
-    box-shadow: 0px 0px 12px #ffd117;
+    background-color: #8ec200;
+    box-shadow: 0px 0px 12px #aaa;
 }
 
 /* ========== S I G N   U P ========== */
@@ -186,7 +194,7 @@ form label {
 }
 
 form input.submit {
-    background-color: #00b3b3;
+    background-color: #8ec200;
     width: auto;
     border: 0px;
     display: inline-block;
