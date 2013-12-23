@@ -7,7 +7,7 @@ var LinearFunction = Class.create({
     },
 
     f : function(x) {
-        if (x >= this.domain[0].first && x <= this.domain[1].first) {
+        if (x >= this.domain[0] && x <= this.domain[1]) {
             return this.a * x + this.b;
         }
         return null;
@@ -15,7 +15,7 @@ var LinearFunction = Class.create({
 
     fInv : function(y) {
         var x = (y - this.b) / this.a;
-        if (x >= this.domain[0].first && x <= this.domain[1].first) {
+        if (x >= this.domain[0] && x <= this.domain[1]) {
             return x;
         }
         return null;
@@ -229,7 +229,7 @@ var Map = Class.create({
             graph.addLine(node2, node3);
 
             var node4 = graph.addNode(new SphericalCoords(19.91471, 50.02806, 17));
-            graph.addLine(node2, node3);
+            graph.addLine(node2, node4);
 
             var node5 = graph.addNode(new SphericalCoords(19.91474, 50.02808, 17));
             graph.addLine(node3, node5);
@@ -237,13 +237,15 @@ var Map = Class.create({
             var node6 = graph.addNode(new SphericalCoords(19.91449, 50.02798, 17));
             var node7 = graph.addNode(new SphericalCoords(19.91316, 50.02740, 17));
             var node8 = graph.addNode(new SphericalCoords(19.91288, 50.02719, 17));
-            var node9 = graph.addNode(new SphericalCoords(19.91276, 50.02702, 17));
+            var node9 = graph.addNode(new SphericalCoords(19.91276, 50.02703, 17));
             var node10 = graph.addNode(new SphericalCoords(19.91272, 50.02690, 17));
+            var node11 = graph.addNode(new SphericalCoords(19.91271, 50.02671, 17));
             graph.addLine(node5, node6);
             graph.addLine(node6, node7);
             graph.addLine(node7, node8);
             graph.addLine(node8, node9);
             graph.addLine(node9, node10);
+            graph.addLine(node10, node11);
             // KONIEC TESTÓW
 
             main.showInfo("Your location has been retrieved (accuracy: " + accuracy + " metres).");

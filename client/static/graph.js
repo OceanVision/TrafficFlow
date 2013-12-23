@@ -68,9 +68,15 @@ var StreetsGraph = Class.create({
 
             a = (y1 - y2) / (x1 - x2),
             b = y2 - a * x2,
-            func = new LinearFunction(a, b, [new CartesianCoords(x1, y1, 17), new CartesianCoords(x2, y2, 17)]);
+            func = null;
 
-        if (startNodeCoords.toOSM().first < endNodeCoords.toOSM().first) {
+        if (x1 <= x2) {
+            func = new LinearFunction(a, b, [x1, x2]);
+        } else {
+            func = new LinearFunction(a, b, [x2, x1]);
+        }
+
+        if (startNodeCoords.toOSM().first <= endNodeCoords.toOSM().first) {
             startX = startNodeCoords.toOSM().first;
             endX = endNodeCoords.toOSM().first;
         } else {
@@ -78,7 +84,7 @@ var StreetsGraph = Class.create({
             endX = startNodeCoords.toOSM().first;
         }
 
-        if (startNodeCoords.toOSM().second < endNodeCoords.toOSM().second) {
+        if (startNodeCoords.toOSM().second <= endNodeCoords.toOSM().second) {
             startY = startNodeCoords.toOSM().second;
             endY = endNodeCoords.toOSM().second;
         } else {
