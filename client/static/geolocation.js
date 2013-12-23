@@ -15,13 +15,15 @@ var Geolocation = Class.create({
                     position.coords.accuracy);
             }, function(error) {
                 geolocation.isAvailable = false;
-                if (typeof errorCallback !== 'undefined') {
+                if (typeof errorCallback != 'undefined') {
                     errorCallback(error);
                 }
+            }, {
+                enableHighAccuracy : true
             });
         } else {
             this.isAvailable = false;
-            if (typeof errorCallback !== 'undefined') {
+            if (typeof errorCallback != 'undefined') {
                 errorCallback(null);
             }
         };

@@ -66,6 +66,11 @@ var Map = Class.create({
             map.load();
             map.update();
             map.addMapEvents();
+        }, function(error) {
+            main.showInfo("Your location could not be retrieved.");
+            map.load();
+            map.update();
+            map.addMapEvents();
         });
     },
 
