@@ -37,9 +37,17 @@ header {
     left: 0px;
 	top: 0px;
     z-index: 1;
+    cursor: default;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 header summary {
+    width: 250px;
     display: table-cell;
     vertical-align: middle;
     padding: 6px 0px 10px 40px;
@@ -74,7 +82,6 @@ header summary p#license {
 }
 
 header nav {
-    width: 400px;
     display: table-cell;
     vertical-align: middle;
     padding-right: 40px;

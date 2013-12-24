@@ -60,17 +60,17 @@ var Map = Class.create({
                 }
 
                 graph.DFS();
-            });
 
-            main.showInfo("Your location has been retrieved (accuracy: " + accuracy + " metres).");
-            map.load();
-            map.update();
-            map.addMapEvents();
+                map.load();
+                map.update();
+                map.addMapEvents();
+                main.showInfo("Your location has been retrieved (accuracy: " + accuracy + " metres).");
+            });
         }, function(error) {
-            main.showInfo("Your location could not be retrieved.");
             map.load();
             map.update();
             map.addMapEvents();
+            main.showInfo("Your location could not be retrieved.");
         });
     },
 
