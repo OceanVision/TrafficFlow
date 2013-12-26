@@ -9,16 +9,13 @@ var StreetsNode = Class.create({
     },
 
     getPositionInTile : function() {
-        var osm = this.coords.toOSM(),
-            spherical = osm.toSpherical();
-        osm.first++;
-        osm.second++;
-        var sphericalNext = osm.toSpherical();
+        var spherical1 = this.coords.toOSM().toSpherical(),
+            spherical2 = this.coords.toOSM(1, 1).toSpherical();
         return {
-            x: ((this.coords.first - spherical.first) /
-                (sphericalNext.first - spherical.first)) * 256,
-            y: ((this.coords.second - spherical.second) /
-                (sphericalNext.second - spherical.second)) * 256
+            x: ((this.coords.first - spherical1.first) /
+                (spherical2.first - spherical1.first)) * 256,
+            y: ((this.coords.second - spherical1.second) /
+                (spherical2.second - spherical1.second)) * 256
         };
     }
 });
@@ -87,10 +84,10 @@ var StreetsGraph = Class.create({
             endNodeCoords = endNode.coords.toCartesian(),
             startX, endX, startY, endY;
 
-        var x1 = startNodeCoords.first + startNode.getPositionInTile().x,
-            y1 = startNodeCoords.second - startNode.getPositionInTile().y,
-            x2 = endNodeCoords.first + endNode.getPositionInTile().x,
-            y2 = endNodeCoords.second - endNode.getPositionInTile().y,
+        var x1 = startNodeCoords.first,
+            y1 = startNodeCoords.second,
+            x2 = endNodeCoords.first,
+            y2 = endNodeCoords.second,
 
             a = (y1 - y2) / (x1 - x2),
             b = y2 - a * x2,
@@ -122,53 +119,54 @@ var StreetsGraph = Class.create({
             for (var j = startY; j <= endY; j++) {
                 var osm = new OSMCoords(i, j, 17),
                     lt = osm.toCartesian(),
-                    rt = osm.toCartesian(1, 0),
-                    lb = osm.toCartesian(0, 1),
-                    rb = osm.toCartesian(1, 1),
+                    rt = osm.toCartesian(256, 0),
+                    lb = osm.toCartesian(0, -256),
+                    rb = osm.toCartesian(256, -256),
                     singleLine = {
-                        points : [],
+                        vertexes : [],
                         width : 2 * line.ways,
                         colour : line.colour
                     };
 
                 if (lt.toOSM().compare(startNode.coords.toOSM())) {
-                    singleLine.points.push(startNode.getPositionInTile());
+                    singleLine.vertexes.push(startNode.getPositionInTile());
                 }
 
                 if (lt.toOSM().compare(endNode.coords.toOSM())) {
-                    singleLine.points.push(endNode.getPositionInTile());
+                    singleLine.vertexes.push(endNode.getPositionInTile());
                 }
 
                 if (func.fInv(lt.second) >= lt.first && func.fInv(lt.second) <= rt.first) {
-                    singleLine.points.push({
+                    singleLine.vertexes.push({
                         x : func.fInv(lt.second) - lt.first,
                         y : 0
                     });
                 }
 
                 if (func.f(rt.first) >= rb.second && func.f(rt.first) <= rt.second) {
-                    singleLine.points.push({
+                    singleLine.vertexes.push({
                         x : 256,
                         y : rt.second - func.f(rt.first)
                     });
                 }
 
                 if (func.fInv(lb.second) >= lb.first && func.fInv(lb.second) <= rb.first) {
-                    singleLine.points.push({
+                    singleLine.vertexes.push({
                         x : func.fInv(lb.second) - lb.first,
                         y : 256
                     });
                 }
 
                 if (func.f(lt.first) >= lb.second && func.f(lt.first) <= lt.second) {
-                    singleLine.points.push({
+                    singleLine.vertexes.push({
                         x : 0,
                         y : lt.second - func.f(lt.first)
                     });
                 }
 
-                if (singleLine.points.length == 2) {
-                    drawingTasks.pushTask(new OSMCoords(i, j, 17), singleLine);
+                if (singleLine.vertexes.length == 2) {
+                    var coords = new OSMCoords(i, j, 17);
+                    drawingTasks.updateTileTask(coords, new Task('streets-line', singleLine));
                 }
             }
         }

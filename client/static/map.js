@@ -17,10 +17,8 @@ var Map = Class.create({
         coeficient : 512
     },
 
-    pointers : [],
-
     initialize : function() {
-        this.content = jQuery("#map");
+        this.content = jQuery('#map');
         //this.coords = new SphericalCoords(19.93731, 50.06184, 17);
         this.coords = new OSMCoords(72794, 44417, 17);
     },
@@ -39,13 +37,18 @@ var Map = Class.create({
             this.tiles[i] = new Array(this.buffer.height);
         }
 
-        geolocation.getLocation(function(coords, accuracy) {
-            map.coords = coords.toOSM();
+        geolocation.getLocation(function(locationCoords, accuracy) {
+            map.coords = locationCoords.toOSM();
 
-            // Lokacja
-            map.pointers.push({
-                osm : coords.toOSM(),
-                pointer : new LocationPointer(coords)
+            // Lokalizacja
+            drawingTasks.updateTileTask(locationCoords, new Task('marker', new LocationMarker(locationCoords)));
+
+            // Pobiera ulubione punkty z bazy danych
+            ajax.getJSON('get_markers', function(data) {
+                for (var i = 0; i < data.markers.length; i++) {
+                    var coords = new SphericalCoords(data.markers[i].longitude, data.markers[i].latitude, 17);
+                    drawingTasks.updateTileTask(coords, new Task('marker', new Marker(coords)));
+                }
             });
 
             // Pobiera graf z bazy danych
@@ -60,17 +63,17 @@ var Map = Class.create({
                 }
 
                 graph.DFS();
-
-                map.load();
-                map.update();
-                map.addMapEvents();
-                main.showInfo("Your location has been retrieved (accuracy: " + accuracy + " metres).");
             });
+
+            map.load();
+            map.update();
+            map.addMapEvents();
+            main.showInfo('Your location has been retrieved (accuracy: ' + accuracy + ' metres).');
         }, function(error) {
             map.load();
             map.update();
             map.addMapEvents();
-            main.showInfo("Your location could not be retrieved.");
+            main.showInfo('Your location could not be retrieved.');
         });
     },
 
@@ -80,10 +83,10 @@ var Map = Class.create({
                 this.tiles[i][j] =
                     new Tile(new OSMCoords(i + this.coords.first, j + this.coords.second, this.coords.zoom));
                 this.tiles[i][j].element.css({
-                    left : (i * 256 + this.viewport.x) + "px",
-                    top : (j * 256 + this.viewport.y) + "px"
+                    left : (i * 256 + this.viewport.x) + 'px',
+                    top : (j * 256 + this.viewport.y) + 'px'
                 });
-                this.tiles[i][j].setPointers(this.pointers);
+                this.tiles[i][j].setMarkers();
                 this.content.append(this.tiles[i][j].element);
             }
         }
@@ -105,10 +108,10 @@ var Map = Class.create({
                 this.tiles[0][j] =
                     new Tile(new OSMCoords(this.coords.first, j + this.coords.second, this.coords.zoom));
                 this.tiles[0][j].element.css({
-                    left : (this.viewport.x - 256) + "px",
-                    top : (j * 256 + this.viewport.y) + "px"
+                    left : (this.viewport.x - 256) + 'px',
+                    top : (j * 256 + this.viewport.y) + 'px'
                 });
-                this.tiles[0][j].setPointers(this.pointers);
+                this.tiles[0][j].setMarkers();
                 this.content.append(this.tiles[0][j].element);
                 this.tiles[this.tiles.length - 1][j].element.detach();
             }
@@ -123,14 +126,14 @@ var Map = Class.create({
             this.coords.second--;
 
             for (var i = 0; i < this.buffer.width; ++i) {
-                this.tiles[i].splice(0, 0, "");
+                this.tiles[i].splice(0, 0, '');
                 this.tiles[i][0] =
                     new Tile(new OSMCoords(i + this.coords.first, this.coords.second, this.coords.zoom));
                 this.tiles[i][0].element.css({
-                    left : (i * 256 + this.viewport.x) + "px",
-                    top : (this.viewport.y - 256) + "px"
+                    left : (i * 256 + this.viewport.x) + 'px',
+                    top : (this.viewport.y - 256) + 'px'
                 });
-                this.tiles[i][0].setPointers(this.pointers);
+                this.tiles[i][0].setMarkers();
                 this.content.append(this.tiles[i][0].element);
                 this.tiles[i][this.tiles[i].length - 1].element.detach();
                 this.tiles[i].splice(this.tiles[i].length - 1, 1);
@@ -151,10 +154,10 @@ var Map = Class.create({
                     new Tile(new OSMCoords(this.coords.first + this.buffer.width - 1,
                         j + this.coords.second, this.coords.zoom));
                 this.tiles[i][j].element.css({
-                    left : (this.viewport.x + this.viewport.width) + "px",
-                    top : (j * 256 + this.viewport.y) + "px"
+                    left : (this.viewport.x + this.viewport.width) + 'px',
+                    top : (j * 256 + this.viewport.y) + 'px'
                 });
-                this.tiles[i][j].setPointers(this.pointers);
+                this.tiles[i][j].setMarkers();
                 this.content.append(this.tiles[i][j].element);
                 this.tiles[0][j].element.detach(); //wali sie
             }
@@ -169,16 +172,16 @@ var Map = Class.create({
             this.coords.second++;
 
             for (var i = 0; i < this.buffer.width; ++i) {
-                this.tiles[i].push("");
+                this.tiles[i].push('');
                 var j = this.tiles[i].length - 1;
                 this.tiles[i][j] =
                     new Tile(new OSMCoords(i + this.coords.first,
                         this.coords.second + this.buffer.height - 1, this.coords.zoom));
                 this.tiles[i][j].element.css({
-                    left : (i * 256 + this.viewport.x) + "px",
-                    top : (this.viewport.y + this.viewport.height) + "px"
+                    left : (i * 256 + this.viewport.x) + 'px',
+                    top : (this.viewport.y + this.viewport.height) + 'px'
                 });
-                this.tiles[i][j].setPointers(this.pointers);
+                this.tiles[i][j].setMarkers();
                 this.content.append(this.tiles[i][j].element);
                 this.tiles[i][0].element.detach();
                 this.tiles[i].splice(0, 1);
@@ -188,6 +191,10 @@ var Map = Class.create({
         }
     },
 
+    collectPointers : function() {
+
+    },
+
     addMapEvents : function() {
         var mouse = {
             x : null,
@@ -195,27 +202,27 @@ var Map = Class.create({
             state : false
         };
 
-        this.content.on("mousedown", function(e) {
+        this.content.off('mousedown').on('mousedown', function(e) {
             mouse.x = e.pageX;
             mouse.y = e.pageY;
             mouse.state = true;
         });
 
-        this.content.on("mousemove", function(e) {
+        this.content.off('mousemove').on('mousemove', function(e) {
             if (!mouse.state) {
                 return;
             }
 
-            jQuery(".tile").css({
-                left : "+=" + (e.pageX - mouse.x),
-                top : "+=" + (e.pageY - mouse.y)
+            jQuery('div.tile').css({
+                left : '+=' + (e.pageX - mouse.x),
+                top : '+=' + (e.pageY - mouse.y)
             });
 
             mouse.x = e.pageX;
             mouse.y = e.pageY;
         });
 
-        this.content.on("mouseup mouseleave", function(e) {
+        this.content.off('mouseup mouseleave').on('mouseup mouseleave', function(e) {
             mouse.state = false;
             map.viewport.x = map.tiles[0][0].element.position().left;
             map.viewport.y = map.tiles[0][0].element.position().top;

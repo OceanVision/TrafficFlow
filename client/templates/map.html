@@ -4,6 +4,9 @@
 <div id="map">
     <script type="text/javascript">
         jQuery(document).on('ready', function() {
+            {% if user.is_authenticated %}
+                main.username = '{{ user.username }}';
+            {% endif %}
             setTimeout(map.start.bind(map), 100);
         });
     </script>

@@ -11,6 +11,8 @@ urlpatterns = patterns('',
     url(r'^sign_up$', views.sign_up, name='sign_up'),
 
     url(r'^get_graph$', views.get_graph, name='get_graph'),
+    url(r'^get_markers$', views.get_markers, name='get_markers'),
+    url(r'^add_marker$', views.add_marker, name='add_marker'),
 
     url(r'^create_exemplary_data$', views.create_exemplary_data, name='create_exemplary_data'),
     url(r'^admin/', include(admin.site.urls)),

@@ -13,3 +13,11 @@ class StreetsLine(models.Model):
     start_node = models.ForeignKey(StreetsNode, related_name='streetsline_start_nodes')
     end_node = models.ForeignKey(StreetsNode, related_name='streetsline_end_nodes')
     ways = models.IntegerField(default=1)
+
+
+class Marker(models.Model):
+    user = models.ForeignKey(User, related_name='marker_users')
+    longitude = models.FloatField()
+    latitude = models.FloatField()
+    title = models.TextField(max_length=50)
+    description = models.TextField(max_length=200)

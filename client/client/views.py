@@ -64,6 +64,19 @@ def get_graph(request):
     return HttpResponse(json.dumps(data), content_type="application/json")
 
 
+# ========== M A R K E R S   M A N A G E M E N T ==========
+def get_markers(request):
+    data = {'markers': utils.get_markers(request)}
+    return HttpResponse(json.dumps(data), content_type="application/json")
+
+
+def add_marker(request):
+    if utils.add_marker(request):
+        return HttpResponse(content="ok", content_type="text/plain")
+    else:
+        return HttpResponse(content="fail", content_type="text/plain")
+
+
 # ========== E X T R A S ==========
 def create_exemplary_data(request):
     utils.create_exemplary_data()

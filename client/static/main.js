@@ -1,5 +1,7 @@
 /* ========== M A I N   C L A S S ========== */
 var Main = Class.create({
+    username : null,
+
     initialize : function() {
         this.setPositions();
     },

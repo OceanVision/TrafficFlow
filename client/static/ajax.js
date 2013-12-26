@@ -33,10 +33,12 @@ var Ajax = Class.create({
     },
 
     getJSON : function(path, successCallback) {
+        jQuery.ajaxSetup({
+            async: false
+        });
         jQuery.getJSON('http://' + location.host + '/' + path, {
-            tags: "mount rainier",
-            tagmode: "any",
-            format: "json"
+            tagmode: 'any',
+            format: 'json'
         })
         .done(function(data) {
             successCallback(data);

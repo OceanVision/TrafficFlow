@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from models import StreetsNode, StreetsLine
+from models import StreetsNode, StreetsLine, Marker
 
 
 # ========== U S E R   M A N A G E M E N T ==========
@@ -17,7 +17,7 @@ def sign_in(request):
 
 
 def sign_out(request):
-    if request.user.is_authenticated:
+    if request.user.is_authenticated():
         logout(request)
         return True
     else:
@@ -52,13 +52,43 @@ def get_lines():
     return data
 
 
+# ========== M A R K E R S   M A N A G E M E N T ==========
+def get_markers(request):
+    if not request.user.is_authenticated():
+        return []
+
+    retrieved_markers = Marker.objects.filter(user__username=request.user.username) # troche lamerskie
+    data = []
+    for marker in retrieved_markers:
+        data.append({'id': marker.id,
+                     'longitude': marker.longitude,
+                     'latitude': marker.latitude,
+                     'title': marker.title,
+                     'description': marker.description})
+    return data
+
+
+def add_marker(request):
+    if not request.user.is_authenticated():
+        return False
+
+    print request.GET
+    longitude = request.GET['longitude']
+    latitude = request.GET['latitude']
+    marker = Marker(user=User.objects.get(username=request.user.username),
+                    longitude=longitude, latitude=latitude, title='', description='')
+    marker.save()
+    return True
+
+
 # ========== E X T R A S ==========
 def create_exemplary_data():
     StreetsNode.objects.all().delete()
+    Marker.objects.all().delete()
 
     # create streets nodes
     streets_nodes = list()
-    streets_nodes.append(StreetsNode(longitude=19.90606, latitude=50.02688, title='', description=''))
+    streets_nodes.append(StreetsNode(longitude=19.90599, latitude=50.02691, title='', description=''))
     streets_nodes.append(StreetsNode(longitude=19.91291, latitude=50.02975, title='', description=''))
     streets_nodes.append(StreetsNode(longitude=19.91295, latitude=50.02976, title='', description=''))
     streets_nodes.append(StreetsNode(longitude=19.91471, latitude=50.02806, title='', description=''))
@@ -88,3 +118,10 @@ def create_exemplary_data():
 
     for line in streets_lines:
         line.save()
+
+    # create markers
+    markers = list()
+    markers.append(Marker(user=User.objects.get(username='brunokam'), longitude=19.90640, latitude=50.03030, title='Punkt 1', description='lala'))
+
+    for marker in markers:
+        marker.save()
