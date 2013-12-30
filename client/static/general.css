@@ -165,18 +165,44 @@ div.tile canvas {
 
 div.marker {
 	background-color: #74899d;
+    box-shadow: 0px 0px 12px #aaa;
 	width: 16px;
 	height: 16px;
 	display: none;
 	position: absolute;
 	z-index: 2;
 	border-radius: 8px;
-	box-shadow: 0px 0px 12px #aaa;
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+div.marker:hover {
+    opacity: 1;
 }
 
 div.marker.location {
     background-color: #8ec200;
     box-shadow: 0px 0px 12px #aaa;
+    opacity: 1;
+}
+
+/* ========== P O P U P ========== */
+
+div.popup {
+    background-color: #fff;
+    box-shadow: 0px 0px 15px #999;
+    padding: 10px;
+    position: absolute;
+    z-index: 2;
+    font-size: 14px;
+	color: #999;
+    cursor: default;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 /* ========== S I G N   U P ========== */

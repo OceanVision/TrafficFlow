@@ -7,10 +7,6 @@ var Coords = Class.create({
         this.zoom = zoom;
     },
 
-    getType : function() {
-        return this.type;
-    },
-
     compare : function(coords) {
         if (this.first == coords.first && this.second == coords.second && this.zoom == coords.zoom) {
             return true;
@@ -54,6 +50,11 @@ var OSMCoords = Class.create(Coords, {
 var CartesianCoords = Class.create(Coords, {
     initialize : function($super, first, second, zoom) {
         $super('cartesian', first, second, zoom);
+    },
+
+    getDistanceToPoint : function(cartesianCoords) {
+        return Math.sqrt(Math.pow(this.first - cartesianCoords.first, 2)
+            + Math.pow(this.second - cartesianCoords.second, 2));
     },
 
     toOSM : function(moveX, moveY) { // uwaga, to dla zoomu 17!

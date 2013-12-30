@@ -1,10 +1,6 @@
 /* ========== G E O L O C A T I O N   C L A S S ========== */
 var Geolocation = Class.create({
     isAvailable : false,
-    locationPointer : {
-        handle : null,
-        position : null
-    },
 
     getLocation : function(successCallback, errorCallback) {
         if (navigator.geolocation) {

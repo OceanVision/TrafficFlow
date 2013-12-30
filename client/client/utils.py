@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from models import StreetsNode, StreetsLine, Marker
+from forms import AddMarkerForm
 
 
 # ========== U S E R   M A N A G E M E N T ==========
@@ -27,6 +28,15 @@ def sign_out(request):
 def sign_up(request):
     user = User.objects.create_user(username=request.POST['username'], password=request.POST['password'])
     user.save()
+
+
+# ========== P O P U P S   M A N A G E M E N T ==========
+def get_popup(request=None):
+    if type == 'add-marker':
+        if request:
+            return AddMarkerForm(request.POST)
+        else:
+            return AddMarkerForm()
 
 
 # ========== S T R E E T S   G R A P H   M A N A G E M E N T ==========
@@ -106,7 +116,7 @@ def create_exemplary_data():
     # create streets lines
     streets_lines = list()
     streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=1), end_node=StreetsNode.objects.get(id=2), ways=2))
-    streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=2), end_node=StreetsNode.objects.get(id=3)))
+    # streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=2), end_node=StreetsNode.objects.get(id=3)))
     streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=2), end_node=StreetsNode.objects.get(id=4)))
     streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=3), end_node=StreetsNode.objects.get(id=5)))
     streets_lines.append(StreetsLine(start_node=StreetsNode.objects.get(id=4), end_node=StreetsNode.objects.get(id=6)))

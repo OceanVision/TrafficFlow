@@ -1,3 +1,27 @@
+/* ========== L I N E A R   F U N C T I O N   C L A S S ========== */
+var LinearFunction = Class.create({
+    initialize : function(a, b, domain) {
+        this.a = a;
+        this.b = b;
+        this.domain = domain;
+    },
+
+    f : function(x) {
+        if (x >= this.domain[0] && x <= this.domain[1]) {
+            return this.a * x + this.b;
+        }
+        return null;
+    },
+
+    fInv : function(y) {
+        var x = (y - this.b) / this.a;
+        if (x >= this.domain[0] && x <= this.domain[1]) {
+            return x;
+        }
+        return null;
+    }
+});
+
 /* ========== S T R E E T S   N O D E   C L A S S ========== */
 var StreetsNode = Class.create({
     initialize : function(id, coords, title, description) { // coords muszą być sferyczne, inaczej to nie ma sensu
@@ -6,6 +30,8 @@ var StreetsNode = Class.create({
         this.title = title;
         this.description = description;
         this.outboundLines = [];
+        this.distance = null;
+        this.parent = null;
     },
 
     getPositionInTile : function() {
@@ -22,12 +48,13 @@ var StreetsNode = Class.create({
 
 /* ========== S T R E E T S   L I N E   C L A S S ========== */
 var StreetsLine = Class.create({
-    initialize : function(node, colour, ways, distance) {
+    initialize : function(node, colour, ways, length) {
         this.node = node;
         this.colour = colour;
         this.ways = ways;
-        this.distance = distance;
+        this.length = length;
         this.isVisited = false;
+        this.isPartOfRoute = false;
     }
 });
 
@@ -51,19 +78,19 @@ var StreetsGraph = Class.create({
         return newNode;
     },
 
-    addLine : function(startNodeId, endNodeId, ways, colour, distance) {
+    addLine : function(startNodeId, endNodeId, ways, colour) {
         ways = typeof ways != 'undefined' ? ways : 1;
         colour = typeof colour != 'undefined' ? colour : '555555';
-        distance = typeof distance != 'undefined' ? distance : 1;
 
         var startNode = this.findNodeById(startNodeId),
-            endNode = this.findNodeById(endNodeId);
+            endNode = this.findNodeById(endNodeId),
+            length = startNode.coords.toCartesian().getDistanceToPoint(endNode.coords.toCartesian());
 
         if (startNode == null || endNode == null) {
             return null;
         }
 
-        var newLine = new StreetsLine(endNode, colour, ways, distance);
+        var newLine = new StreetsLine(endNode, colour, ways, length);
         startNode.outboundLines.push(newLine);
         return newLine;
     },
@@ -75,6 +102,65 @@ var StreetsGraph = Class.create({
             }
         }
         return null;
+    },
+
+    findClosestNode : function(coords) {
+        var cartesianCoords = coords.toCartesian(),
+            minDistance = Number.MAX_VALUE,
+            bestNode = null;
+        for (var i = 0; i < this.nodes.length; i++) {
+            var distance = cartesianCoords.getDistanceToPoint(this.nodes[i].coords.toCartesian());
+            if (distance < minDistance) {
+                minDistance = distance;
+                bestNode = this.nodes[i];
+            }
+        }
+        return bestNode;
+    },
+
+    findBestRoute : function(startNodeId, endNodeId) {
+        var startNode = this.findNodeById(startNodeId),
+            endNode = this.findNodeById(endNodeId);
+
+        for (var i = 0; i < this.nodes.length; i++) {
+            this.nodes[i].distance = Number.MAX_VALUE;
+            this.nodes[i].parent = null;
+        }
+
+        startNode.distance = 0;
+        var node, queue = [startNode];
+        while (queue.length > 0) {
+            node = queue.shift();
+            for (var i = 0; i < node.outboundLines.length; i++) {
+                var neighbour = node.outboundLines[i].node;
+                if (neighbour.distance > node.distance + node.outboundLines[i].length) {
+                    neighbour.distance = node.distance + node.outboundLines[i].length;
+                    neighbour.parent = node;
+                    queue.push(neighbour);
+                }
+            }
+        }
+
+        var route = [];
+        node = endNode;
+        while (node != null) {
+            route.unshift(node.id);
+            node = node.parent;
+        }
+
+        return route;
+    },
+
+    addLineToRoute : function(startNodeId, endNodeId) {
+        var startNode = this.findNodeById(startNodeId),
+            line = null;
+        for (var i = 0; i < startNode.outboundLines.length; i++) {
+            line = startNode.outboundLines[i];
+            if (line.node.id == endNodeId) {
+                line.isPartOfRoute = true;
+                break;
+            }
+        }
     },
 
     // TODO: aktualnie jest problem z rysowaniem prawie pionowych linii
@@ -125,8 +211,15 @@ var StreetsGraph = Class.create({
                     singleLine = {
                         vertexes : [],
                         width : 2 * line.ways,
-                        colour : line.colour
+                        colour : null
                     };
+
+                if (!line.isPartOfRoute) {
+                    singleLine.colour = line.colour;
+                } else {
+                    singleLine.colour = 'd14c1f';
+                    singleLine.width = 4;
+                }
 
                 if (lt.toOSM().compare(startNode.coords.toOSM())) {
                     singleLine.vertexes.push(startNode.getPositionInTile());
@@ -183,6 +276,7 @@ var StreetsGraph = Class.create({
     },
 
     DFS : function() {
+        drawingTasks.removeTasksOfType('streets-line');
         for (var i = 0; i < this.nodes.length; i++) {
             for (var j = 0; j < this.nodes[i].outboundLines.length; j++) {
                 this.nodes[i].outboundLines[j].isVisited = false;
@@ -191,6 +285,12 @@ var StreetsGraph = Class.create({
 
         for (var i = 0; i < this.nodes.length; i++) {
             this.visitNode(this.nodes[i]);
+        }
+
+        for (var i = 0; i < this.nodes.length; i++) {
+            for (var j = 0; j < this.nodes[i].outboundLines.length; j++) {
+                this.nodes[i].outboundLines[j].isPartOfRoute = false;
+            }
         }
     }
 });

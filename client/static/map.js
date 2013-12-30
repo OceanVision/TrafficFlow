@@ -2,7 +2,7 @@
 var Map = Class.create({
     content : null,
     tiles : null,
-    coords : null,
+    startingCoords : null,
 
     buffer : {
         width : null,
@@ -17,10 +17,13 @@ var Map = Class.create({
         coeficient : 512
     },
 
+    activeMarker : null,
+    activePopup : null,
+
     initialize : function() {
         this.content = jQuery('#map');
-        //this.coords = new SphericalCoords(19.93731, 50.06184, 17);
-        this.coords = new OSMCoords(72794, 44417, 17);
+        //this.startingCoords = new SphericalCoords(19.93731, 50.06184, 17);
+        this.startingCoords = new OSMCoords(72794, 44417, 17);
     },
 
     start : function() {
@@ -38,7 +41,7 @@ var Map = Class.create({
         }
 
         geolocation.getLocation(function(locationCoords, accuracy) {
-            map.coords = locationCoords.toOSM();
+            map.startingCoords = locationCoords.toOSM();
 
             // Lokalizacja
             drawingTasks.updateTileTask(locationCoords, new Task('marker', new LocationMarker(locationCoords)));
@@ -68,12 +71,12 @@ var Map = Class.create({
             map.load();
             map.update();
             map.addMapEvents();
-            main.showInfo('Your location has been retrieved (accuracy: ' + accuracy + ' metres).');
+            utils.showInfo('Your location has been retrieved (accuracy: ' + accuracy + ' metres).');
         }, function(error) {
             map.load();
             map.update();
             map.addMapEvents();
-            main.showInfo('Your location could not be retrieved.');
+            utils.showInfo('Your location could not be retrieved.');
         });
     },
 
@@ -81,7 +84,7 @@ var Map = Class.create({
         for (var i = 0; i < this.buffer.width; ++i) {
             for (var j = 0; j < this.buffer.height; ++j) {
                 this.tiles[i][j] =
-                    new Tile(new OSMCoords(i + this.coords.first, j + this.coords.second, this.coords.zoom));
+                    new Tile(new OSMCoords(i + this.startingCoords.first, j + this.startingCoords.second, this.startingCoords.zoom));
                 this.tiles[i][j].element.css({
                     left : (i * 256 + this.viewport.x) + 'px',
                     top : (j * 256 + this.viewport.y) + 'px'
@@ -101,12 +104,12 @@ var Map = Class.create({
 
     updateLeft : function() {
         while (this.viewport.x > 0) {
-            this.coords.first--;
+            this.startingCoords.first--;
             this.tiles.splice(0, 0, new Array(this.buffer.height));
 
             for (var j = 0; j < this.buffer.height; ++j) {
                 this.tiles[0][j] =
-                    new Tile(new OSMCoords(this.coords.first, j + this.coords.second, this.coords.zoom));
+                    new Tile(new OSMCoords(this.startingCoords.first, j + this.startingCoords.second, this.startingCoords.zoom));
                 this.tiles[0][j].element.css({
                     left : (this.viewport.x - 256) + 'px',
                     top : (j * 256 + this.viewport.y) + 'px'
@@ -123,12 +126,12 @@ var Map = Class.create({
 
     updateTop : function() {
         while (this.viewport.y > 0) {
-            this.coords.second--;
+            this.startingCoords.second--;
 
             for (var i = 0; i < this.buffer.width; ++i) {
                 this.tiles[i].splice(0, 0, '');
                 this.tiles[i][0] =
-                    new Tile(new OSMCoords(i + this.coords.first, this.coords.second, this.coords.zoom));
+                    new Tile(new OSMCoords(i + this.startingCoords.first, this.startingCoords.second, this.startingCoords.zoom));
                 this.tiles[i][0].element.css({
                     left : (i * 256 + this.viewport.x) + 'px',
                     top : (this.viewport.y - 256) + 'px'
@@ -145,14 +148,14 @@ var Map = Class.create({
 
     updateRight : function() {
         while (this.viewport.x + this.viewport.width < jQuery(window).width()) {
-            this.coords.first++;
+            this.startingCoords.first++;
             this.tiles.push(new Array(this.buffer.height));
 
             for (var j = 0; j < this.buffer.height; ++j) {
                 var i = this.tiles.length - 1;
                 this.tiles[i][j] =
-                    new Tile(new OSMCoords(this.coords.first + this.buffer.width - 1,
-                        j + this.coords.second, this.coords.zoom));
+                    new Tile(new OSMCoords(this.startingCoords.first + this.buffer.width - 1,
+                        j + this.startingCoords.second, this.startingCoords.zoom));
                 this.tiles[i][j].element.css({
                     left : (this.viewport.x + this.viewport.width) + 'px',
                     top : (j * 256 + this.viewport.y) + 'px'
@@ -169,14 +172,14 @@ var Map = Class.create({
 
     updateBottom : function() {
         while (this.viewport.y + this.viewport.height < jQuery(window).height()) {
-            this.coords.second++;
+            this.startingCoords.second++;
 
             for (var i = 0; i < this.buffer.width; ++i) {
                 this.tiles[i].push('');
                 var j = this.tiles[i].length - 1;
                 this.tiles[i][j] =
-                    new Tile(new OSMCoords(i + this.coords.first,
-                        this.coords.second + this.buffer.height - 1, this.coords.zoom));
+                    new Tile(new OSMCoords(i + this.startingCoords.first,
+                        this.startingCoords.second + this.buffer.height - 1, this.startingCoords.zoom));
                 this.tiles[i][j].element.css({
                     left : (i * 256 + this.viewport.x) + 'px',
                     top : (this.viewport.y + this.viewport.height) + 'px'
@@ -191,8 +194,12 @@ var Map = Class.create({
         }
     },
 
-    collectPointers : function() {
-
+    redrawStreetsGraph : function() {
+        for (var i = 0; i < this.buffer.width; ++i) {
+            for (var j = 0; j < this.buffer.height; ++j) {
+                this.tiles[i][j].drawStreetsLines();
+            }
+        }
     },
 
     addMapEvents : function() {

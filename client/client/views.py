@@ -57,6 +57,22 @@ def sign_up(request):
                                                      'form': form})
 
 
+# ========== P O P U P S   M A N A G E M E N T ==========
+def get_popup(request):
+    if request.method == 'POST':
+        form = utils.get_popup(request)
+        if form.is_valid():
+            # utils.sign_up(request)
+            return HttpResponseRedirect('/')
+        else:
+            return render(request, 'popup.html', {'form_submit': 'done',
+                                                  'form': form})
+    else:
+        form = utils.get_popup()
+        return render(request, 'popup.html', {'form_submit': 'done',
+                                              'form': form})
+
+
 # ========== S T R E E T S   G R A P H   M A N A G E M E N T ==========
 def get_graph(request):
     data = {'nodes': utils.get_nodes(),
