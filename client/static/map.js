@@ -44,18 +44,24 @@ var Map = Class.create({
             map.startingCoords = locationCoords.toOSM();
 
             // Lokalizacja
-            drawingTasks.updateTileTask(locationCoords, new Task('marker', new LocationMarker(locationCoords)));
+            drawingTasks.updateTileTask(locationCoords, new Task('location-marker', {
+                coords: locationCoords,
+                id: 0
+            }));
 
             // Pobiera ulubione punkty z bazy danych
-            ajax.getJSON('get_markers', function(data) {
+            ajax.getJSON('get_markers', {}, function(data) {
                 for (var i = 0; i < data.markers.length; i++) {
                     var coords = new SphericalCoords(data.markers[i].longitude, data.markers[i].latitude, 17);
-                    drawingTasks.updateTileTask(coords, new Task('marker', new Marker(coords)));
+                    drawingTasks.updateTileTask(coords, new Task('marker', {
+                        coords: coords,
+                        id: data.markers[i].id
+                    }));
                 }
             });
 
             // Pobiera graf z bazy danych
-            ajax.getJSON('get_graph', function(data) {
+            ajax.getJSON('get_graph', {}, function(data) {
                 for (var i = 0; i < data.nodes.length; i++) {
                     graph.addNode(data.nodes[i].id,
                         new SphericalCoords(data.nodes[i].longitude, data.nodes[i].latitude, 17));

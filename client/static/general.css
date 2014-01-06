@@ -212,11 +212,16 @@ form {
     position: absolute;
 }
 
-form#sign-up, form#sign-in,
-form#add-street-node, form#delete-street-nodes,
-form#add-street-edge, form#delete-street-edges,
-form#add-favorite-point, form#delete-favorite-points {
+div.popup form {
+    position: static;
+}
+
+form#sign-up, form#sign-in {
     width: 390px;
+}
+
+div.popup form {
+    width: 230px;
 }
 
 form label {
@@ -226,13 +231,36 @@ form label {
     color: #ccc;
 }
 
-form input.submit {
+div.popup form label {
+    width: 120px;
+    font-size: 14px;
+}
+
+div.popup form input {
+    width: 100px;
+    margin-bottom: 15px;
+    padding: 2px 5px;
+    font-size: 14px;
+}
+
+form input.submit, form input.cancel {
     background-color: #8ec200;
-    width: auto;
     border: 0px;
+    width: auto;
+    margin-bottom: 0px !important;
     display: inline-block;
     float: right;
     padding: 8px 10px;
+    cursor: pointer;
     font-size: 20px;
     color: #fff;
+}
+
+form input.cancel {
+    background-color: #999;
+    float: left;
+}
+
+div.popup form input.submit, div.popup form input.cancel {
+    padding: 4px 5px;
 }

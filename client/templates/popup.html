@@ -1,0 +1,12 @@
+<div class="popup">
+    {% ifequal data.type 'form' %}
+        <form action="" method="post">
+            {% csrf_token %} {#cross site request forgery protection#}
+            {{ data.form }}
+            <input class="cancel" type="button" value="cancel">
+            <input class="submit" type="submit" value="{{ data.form_submit }}">
+        </form>
+    {% else %}
+        {{ data.text }}
+    {% endifequal %}
+</div>

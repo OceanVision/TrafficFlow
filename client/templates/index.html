@@ -36,6 +36,9 @@
             <a href="./sign_up">Sign up</a>
             {% else %}
             <p id="auth-state">You are signed in as <span>{{ user.username }}</span>.</p>
+            {% if user.is_superuser %}
+            <a href="./create_exemplary_data">Reset data</a>
+            {% endif %}
             <a href="./sign_out">Sign out</a>
             {% endif %}
         </nav>

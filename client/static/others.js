@@ -2,23 +2,14 @@ var popupAvailableId = 0;
 
 /* ========== P O P U P   C L A S S ========== */
 var Popup = Class.create({
-    initialize : function(type, sphericalCoords) {
+    initialize : function(type, sphericalCoords, tile, data) {
         this.id = popupAvailableId;
         popupAvailableId++;
         this.type = type;
         this.coords = sphericalCoords;
+        this.tile = tile;
+        this.data = typeof data != 'undefined' ? data : null;
         this.element = this.toElement();
-        this.tile = null;
-
-        this.element
-            .on('click', function() {
-                if (map.activePopup != null) {
-                    map.activePopup.detach();
-                }
-            })
-            .on('mousedown mousemove mouseup', function(e) {
-                e.stopPropagation();
-            });
     },
 
     getPositionInTile : function() {
@@ -33,20 +24,31 @@ var Popup = Class.create({
     },
 
     toElement : function() {
-        var popup = jQuery('<div class="popup ' + this.type + '">Click another marker to find the route.</div>'),
-            position = this.getPositionInTile();
-        popup.css({
+        var element, position, self = this;
+        jQuery.ajaxSetup({
+            async: false
+        });
+        jQuery.get('get_popup/' + this.type, function(response) {
+            element = jQuery(response);
+            if (self.type == 'add-marker') {
+                element.find('#id_longitude').val(self.coords.first);
+                element.find('#id_latitude').val(self.coords.second);
+            }
+        });
+
+        position = this.getPositionInTile();
+        element.css({
             left: position.x + 'px',
             top: position.y + 'px'
         });
-        return popup;
+        this.addEvents(element);
+        return element;
     },
 
-    attachToTile : function(tile) {
+    attach : function() {
         if (map.activePopup != null) {
             map.activePopup.detach();
         }
-        this.tile = tile;
         this.element
             .appendTo(this.tile.element)
             .show();
@@ -60,18 +62,64 @@ var Popup = Class.create({
         this.tile.popup = null;
         map.activePopup = null;
         map.activeMarker = null;
+        if (this.type == 'add-marker' && typeof this.data != 'undefined') {
+            this.data.detach();
+        }
+    },
+
+    addEvents : function(element) {
+        var self = this;
+        if (this.type == 'start-routing') {
+            element.on('click', function(e) {
+                e.stopPropagation();
+                if (map.activePopup != null) {
+                    jQuery.get('remove_marker', 'id=' + self.data.id, function(response) {
+                        if (response == 'ok') {
+                            utils.showInfo('The marker was removed successfully.');
+                            self.data.detach();
+                            self.data = undefined;
+                        } else {
+                            utils.showInfo('The marker could not be removed.');
+                        }
+                        map.activePopup.detach();
+                    });
+                }
+            });
+        } else if (this.type == 'add-marker') {
+            element.find('form').submit(function() {
+                jQuery.post('get_popup/' + self.type, $(this).serialize(), function(response) {
+                    if (response != 'fail') {
+                        utils.showInfo('The marker was added successfully.');
+                        self.data.id = parseInt(response);
+                        self.data = undefined;
+                    } else {
+                        utils.showInfo('The marker could not be added.');
+                    }
+                    self.detach()
+                });
+                return false;
+            });
+        }
+
+        element.find('input.cancel').on('click', function(e) {
+            e.stopPropagation();
+            self.detach();
+        });
+
+        element.on('mousedown mousemove mouseup', function(e) {
+            e.stopPropagation();
+        });
     }
 });
 
-var markerAvailableId = 0;
-
 /* ========== M A R K E R   C L A S S ========== */
 var Marker = Class.create({
-    initialize : function(sphericalCoords) {
-        this.id = markerAvailableId;
-        markerAvailableId++;
+    initialize : function(sphericalCoords, tile, id) {
+        this.id = typeof id != 'undefined' ? id : null;
         this.coords = sphericalCoords;
         this.size = 16;
+        this.tile = tile;
+        this.element = this.toElement();
     },
 
     getPositionInTile : function() {
@@ -86,17 +134,56 @@ var Marker = Class.create({
     },
 
     toElement : function() {
-        var marker = jQuery('<div class="marker"></div>'),
+        var element = jQuery('<div class="marker"></div>'),
             position = this.getPositionInTile();
-        marker
-            .css({
+
+        element.css({
                 left: position.x + 'px',
                 top: position.y + 'px'
+            });
+        this.addEvents(element);
+        return element;
+    },
+
+    attach : function() {
+        this.element
+            .appendTo(this.tile.element)
+            .show();
+    },
+
+    detach : function() {
+        this.element
+            .detach();
+    },
+
+    addEvents : function(element) {
+        var self = this;
+        element
+            .on('click', function(e) {
+                e.stopPropagation();
+
+                if (map.activeMarker != null && map.activeMarker.id == self.id) {
+                    self.tile.popup.detach();
+                } else if (map.activeMarker == null) {
+                    (new Popup('start-routing', self.coords, self.tile, self)).attach();
+                    map.activeMarker = self;
+                } else {
+                    var startNode = graph.findClosestNode(map.activeMarker.coords),
+                        endNode = graph.findClosestNode(self.coords);
+
+                    var route = graph.findBestRoute(startNode.id, endNode.id);
+                    for (var i = 0; i < route.length-1; i++) {
+                        graph.addLineToRoute(route[i], route[i+1]);
+                    }
+                    graph.DFS();
+                    map.redrawStreetsGraph();
+                    map.activePopup.detach();
+                    map.activeMarker = null;
+                }
             })
             .on('dblclick', function(e) {
                 e.stopPropagation();
             });
-        return marker;
     }
 });
 
@@ -129,7 +216,7 @@ var Tile = Class.create({
             .append(canvas);
 
         this.element.on('dblclick', (function(e) {
-            if (main.username == null) {
+            if (utils.activeUsername == null) {
                 return;
             }
 
@@ -139,11 +226,9 @@ var Tile = Class.create({
                 data = 'longitude=' + coords.first + '&latitude=' + coords.second,
                 tile = this;
 
-            ajax.request('add_marker', 'GET', data, function(response) {
-                if (response == 'ok') {
-                    tile.appendMarker(new Marker(coords));
-                }
-            });
+            var marker = new Marker(coords, this);
+            (new Popup('add-marker', coords, this, marker)).attach();
+            marker.attach();
         }).bind(this));
 
         this.img = img[0];
@@ -159,34 +244,6 @@ var Tile = Class.create({
         this.popup = null;
     },
 
-    appendMarker : function(marker) {
-        var tile = this;
-        marker.toElement()
-            .appendTo(this.element)
-            .show()
-            .on('click', function(e) {
-                e.stopPropagation();
-                if (map.activeMarker != null && map.activeMarker.id == marker.id) {
-                    tile.popup.detach();
-                } else if (map.activeMarker == null) {
-                    (new Popup('find-route', marker.coords)).attachToTile(tile);
-                    map.activeMarker = marker;
-                } else {
-                    var startNode = graph.findClosestNode(map.activeMarker.coords),
-                        endNode = graph.findClosestNode(marker.coords);
-
-                    var route = graph.findBestRoute(startNode.id, endNode.id);
-                    for (var i = 0; i < route.length-1; i++) {
-                        graph.addLineToRoute(route[i], route[i+1]);
-                    }
-                    graph.DFS();
-                    map.redrawStreetsGraph();
-                    map.activePopup.detach();
-                    map.activeMarker = null;
-                }
-            });
-    },
-
     setMarkers : function() {
         var tileTask = drawingTasks.getTileTask(this.coords);
         if (tileTask == null) {
@@ -195,7 +252,13 @@ var Tile = Class.create({
 
         this.markers = tileTask.getTasksByType('marker');
         for (var i = 0; i < this.markers.length; i++) {
-            this.appendMarker(this.markers[i].data);
+            (new Marker(this.markers[i].data.coords, this, this.markers[i].data.id)).attach();
+        }
+
+        var locationMarker = tileTask.getTasksByType('location-marker');
+        if (locationMarker.length == 1) {
+            this.markers.push(locationMarker[0]);
+            (new LocationMarker(locationMarker[0].data.coords, this, locationMarker[0].data.id)).attach();
         }
     },
 

@@ -13,5 +13,7 @@ class SignUpForm(forms.Form):
 
 
 class AddMarkerForm(forms.Form):
-    title = forms.CharField(max_length=50, required=True, label='Title')
-    description = forms.CharField(max_length=50, label='Description')
+    longitude = forms.CharField(widget=forms.HiddenInput(), required=True)
+    latitude = forms.CharField(widget=forms.HiddenInput(), required=True)
+    title = forms.CharField(max_length=50, required=False, label='Title')
+    description = forms.CharField(max_length=50, required=False, label='Description')

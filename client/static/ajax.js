@@ -22,7 +22,7 @@ var Ajax = Class.create({
             type : type,
             data : data,
             dataType : 'html',
-            async : true,
+            async : false,
             success : function(response) {
                 successCallback(response);
             },
@@ -32,15 +32,11 @@ var Ajax = Class.create({
         });
     },
 
-    getJSON : function(path, successCallback) {
+    getJSON : function(path, data, successCallback) {
         jQuery.ajaxSetup({
             async: false
         });
-        jQuery.getJSON('http://' + location.host + '/' + path, {
-            tagmode: 'any',
-            format: 'json'
-        })
-        .done(function(data) {
+        jQuery.getJSON('http://' + location.host + '/' + path, data, function(data) {
             successCallback(data);
         });
     },

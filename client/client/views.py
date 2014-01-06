@@ -58,42 +58,43 @@ def sign_up(request):
 
 
 # ========== P O P U P S   M A N A G E M E N T ==========
-def get_popup(request):
+def get_popup(request, popup_type='start-routing'):
     if request.method == 'POST':
-        form = utils.get_popup(request)
-        if form.is_valid():
-            # utils.sign_up(request)
-            return HttpResponseRedirect('/')
+        data = utils.get_popup(popup_type, request)
+        if data['type'] == 'form' and data['form'].is_valid():
+            result, marker_id = utils.add_marker(request)
+            if result:
+                return HttpResponse(content=str(marker_id), content_type='text/plain')
+            else:
+                return HttpResponse(content='fail', content_type='text/plain')
         else:
-            return render(request, 'popup.html', {'form_submit': 'done',
-                                                  'form': form})
+            return render(request, 'popup.html', {'data': data})
     else:
-        form = utils.get_popup()
-        return render(request, 'popup.html', {'form_submit': 'done',
-                                              'form': form})
+        data = utils.get_popup(popup_type)
+        return render(request, 'popup.html', {'data': data})
+
+
+def remove_marker(request):
+    if utils.remove_marker(request):
+        return HttpResponse(content='ok', content_type='text/plain')
+    else:
+        return HttpResponse(content='fail', content_type='text/plain')
 
 
 # ========== S T R E E T S   G R A P H   M A N A G E M E N T ==========
 def get_graph(request):
     data = {'nodes': utils.get_nodes(),
             'lines': utils.get_lines()}
-    return HttpResponse(json.dumps(data), content_type="application/json")
+    return HttpResponse(content=json.dumps(data), content_type='application/json')
 
 
 # ========== M A R K E R S   M A N A G E M E N T ==========
 def get_markers(request):
     data = {'markers': utils.get_markers(request)}
-    return HttpResponse(json.dumps(data), content_type="application/json")
-
-
-def add_marker(request):
-    if utils.add_marker(request):
-        return HttpResponse(content="ok", content_type="text/plain")
-    else:
-        return HttpResponse(content="fail", content_type="text/plain")
+    return HttpResponse(content=json.dumps(data), content_type='application/json')
 
 
 # ========== E X T R A S ==========
 def create_exemplary_data(request):
-    utils.create_exemplary_data()
+    utils.create_exemplary_data(request)
     return HttpResponseRedirect('/')

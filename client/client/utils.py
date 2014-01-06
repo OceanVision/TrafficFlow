@@ -31,12 +31,15 @@ def sign_up(request):
 
 
 # ========== P O P U P S   M A N A G E M E N T ==========
-def get_popup(request=None):
-    if type == 'add-marker':
+def get_popup(popup_type, request=None):
+    if popup_type == 'add-marker':
         if request:
-            return AddMarkerForm(request.POST)
+            data = {'type': 'form', 'form': AddMarkerForm(request.POST), 'form_submit': 'add marker'}
         else:
-            return AddMarkerForm()
+            data = {'type': 'form', 'form': AddMarkerForm(), 'form_submit': 'add marker'}
+    elif popup_type == 'start-routing':
+        data = {'type': 'text', 'text': 'Click here to remove marker.'}
+    return data
 
 
 # ========== S T R E E T S   G R A P H   M A N A G E M E N T ==========
@@ -80,19 +83,32 @@ def get_markers(request):
 
 def add_marker(request):
     if not request.user.is_authenticated():
+        return False, 0
+
+    longitude = request.POST['longitude']
+    latitude = request.POST['latitude']
+    title = request.POST['title']
+    description = request.POST['description']
+    marker = Marker(user=User.objects.get(username=request.user.username),
+                    longitude=longitude, latitude=latitude, title=title, description=description)
+    marker.save()
+    return True, marker.id
+
+
+def remove_marker(request):
+    if not request.user.is_authenticated():
         return False
 
-    print request.GET
-    longitude = request.GET['longitude']
-    latitude = request.GET['latitude']
-    marker = Marker(user=User.objects.get(username=request.user.username),
-                    longitude=longitude, latitude=latitude, title='', description='')
-    marker.save()
+    marker_id = request.GET['id']
+    Marker.objects.get(id=marker_id).delete()
     return True
 
 
 # ========== E X T R A S ==========
-def create_exemplary_data():
+def create_exemplary_data(request):
+    if not request.user.is_authenticated() or not request.user.is_superuser:
+        return False
+
     StreetsNode.objects.all().delete()
     Marker.objects.all().delete()
 
